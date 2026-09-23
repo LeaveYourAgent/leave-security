@@ -1,0 +1,230 @@
+# Leave iOS app: security design
+
+**Status as of 2026-09-23.** Each item below is marked **Built** (in the app today),
+**In testing** (in the current TestFlight build, running on fictional data), or
+**Planned** (designed, agreed with the backend, not yet in code). The current
+TestFlight build is build 6. It runs entirely on placeholder data and does not connect
+to a live account, so nothing in it touches real athlete information.
+
+This is the public edition of the app's internal plan. It is the app-side counterpart
+to the Leave backend plan and the Leave API contract, both published in this
+repository. Route shapes and cryptographic framing are defined in the API contract;
+this document says what the app does with them.
+
+Principle: wherever a choice trades convenience or cost against the athlete, the
+athlete wins. Keys never leave the phone. Nothing private is readable by Leave, by
+our hosting provider, or by a vendor outside a session the athlete started.
+
+## Status summary
+
+| Area | Status |
+|---|---|
+| Sign-in with an emailed six-digit code, no password anywhere | In testing (screens built; the code is verified by a placeholder until the sign-in provider is wired) |
+| Sign-up: who the account is for, names, athlete's date of birth as an age gate (13 and up; 13 to 17 through a parent or legal guardian), clickwrap agreement with the accepted terms version recorded | In testing |
+| Terms of Service and Privacy Policy links on every sign-in and sign-up screen and in Profile | In testing |
+| Delete my account, in-app, with typed confirmation | In testing (deletes the local account; server deletion lands with the backend) |
+| No analytics SDK, no advertising SDK, no Google Analytics in the app | Built |
+| System permission prompts only for camera, photo library, microphone and on-device speech, each with a plain-language reason | Built |
+| No location, contacts or advertising-identifier access | Built |
+| App declares that it uses only exempt encryption (standard TLS) until the athlete-key module ships | Built |
+| Athlete-held encryption (the design in section 2) | Planned |
+| Face ID lock, screenshot protection on private screens, clipboard expiry | Planned |
+| New-device approval and recovery code | Planned |
+| Profile → Your key (status, rotate, revoke) | Planned |
+| On-device contract text extraction and OCR before upload | Planned |
+| On-device speech recognition by default, server fallback only by opt-in with a visible indicator | Planned |
+| Connections: public-only AI connections, per-client private unlock with retention notice | Planned |
+| Usage meter, allowance nudges, credits bought on the web | Planned |
+| Open-source crypto package with shared test vectors | Planned |
+
+## 0. Architecture the app adopts
+
+- **Two layers.** A native Swift package, `LeaveCrypto`, does everything that touches
+  keys: the Secure Enclave key pair, the athlete share in the Keychain, per-record data
+  keys, wrap and unwrap, session key exchange, and recovery-code derivation. It has no
+  dependency on the app, on React Native, or on the sign-in provider, so it can be
+  published and reviewed on its own. A thin bridge exposes a small typed API to the
+  app's JavaScript. JavaScript never sees a share, a data key, or a recovery code; it
+  sees record IDs, opaque ciphertext, and booleans.
+- **Repositories are the seam.** Screens talk only to repository interfaces. Today the
+  implementations are mocks; the production ones call the Leave API with a sign-in
+  token, an App Check token, and, when private data is involved, a session grant.
+- **A `SessionGrant` object** owns the 15-minute window: the server's public key, the
+  set of record IDs whose keys were handed over, the expiry, and a `renew()` that
+  re-hands the same keys. Every private-data call goes through it.
+
+## 1. Identity: emailed code, designed screens kept (In testing)
+
+Sign-in is an emailed six-digit code through WorkOS Magic Auth. The app keeps its own
+Email and Code screens and calls two Leave routes instead of a hosted sign-in page:
+
+| App step | Route | Notes |
+|---|---|---|
+| Email screen, "Send code" | `POST /auth/code { email }` | always answers 202 so it cannot be used to discover accounts; rate limited |
+| Code screen, "Continue" | `POST /auth/verify { email, code, device }` | returns access and refresh tokens, whether the email is new, and whether this device is approved |
+| Refresh | `POST /auth/refresh` | refresh token kept in the Keychain, this device only, never synced |
+
+Access tokens live 15 minutes; refresh tokens 30 days, rotated on use. Passkeys arrive
+as a second factor in the first update after launch.
+
+**New-device rule (Planned).** A device the account has never seen gets no private
+data until a device that already holds the share approves it, or the athlete enters
+the recovery code. Every new sign-in notifies every device and the Teammate.
+
+## 2. The crypto module (Planned; design is final)
+
+What it stores and where:
+
+| Item | Where | Attributes |
+|---|---|---|
+| Device key pair, P-256 | Secure Enclave | biometry or passcode required for use; the private key never leaves the enclave |
+| Athlete share, 32 bytes | Keychain | accessible after first unlock, synchronizable, no biometric access control, so iCloud Keychain carries it and background Web runs can read it |
+| Account key pair, P-256 | derived, never stored | private scalar derived from the share by rejection sampling: `HKDF-SHA256(share, salt "leave:v1:account-key", info accountId ‖ ":" ‖ counter)`, counter from 0 as ASCII, accepted when in `[1, n-1]`, else retry; stable across the account's devices |
+| Recovery blob | server only | the share encrypted under an Argon2id-derived key from the recovery code; the app never stores the code |
+| Refresh token | Keychain | this device only, not synchronizable |
+
+Key roles, so the design is read correctly: the **share** is the syncable wrapping
+secret. The **account key pair** is derived from it and is what other accounts (the
+Teammate) encrypt to. The **Secure Enclave key** is the per-device identity that signs
+device approvals and destructive-action confirmations; it is not a wrapping key,
+because Secure Enclave keys cannot sync and a Keychain item with a biometric access
+control cannot sync either.
+
+The package's public API:
+
+```
+createAthleteIdentity()        -> share created, SE key created, device public key
+devicePublicKey()              -> P-256 public key, registered with the server per device
+accountPublicKey()             -> P-256 public key derived from the share, registered once
+wrapDataKey(dataKey, recordID) -> share-wrapped blob  (key = HKDF-SHA256(share, salt recordID, info "leave:v1:dek-wrap"); AES-256-GCM; AAD "leave:v1:<type>:<recordID>")
+unwrapDataKey(blob, recordID)  -> dataKey (in memory only)
+newDataKey()                   -> 32 random bytes
+encryptRecord / decryptRecord  -> AES-256-GCM, wire nonce(12) ‖ ciphertext ‖ tag(16), AAD "leave:v1:<type>:<recordID>"
+makeGrant(serverRsaPub, sessionID, exp, keys) -> grant (32-byte session key sealed with RSA-3072-OAEP-SHA256 to a key held in the cloud HSM; each data key sealed under the session key with AAD "leave:v1:grant:<sessionID>:<recordID>"; exp at most 15 minutes)
+wrapForAccount(dataKey, accountPub, recordID) -> HPKE blob (DHKEM P-256, HKDF-SHA256, AES-256-GCM, info "leave:v1:xwrap:<recordID>"); used for the Teammate
+wrapShareForDevice(share, devicePub, approvalRequestID) -> HPKE blob (info "leave:v1:device-approve:<approvalRequestID>")
+signConfirmation(action, targetID, timestamp) -> Secure Enclave signature for the confirmation header
+rotateShare(progress)          -> new share; re-wraps every share-wrapped key the server lists, uploads the new blobs, then swaps the share
+revokeShare()                  -> deletes the share locally and from iCloud Keychain (the server holds it disabled for 24 hours for undo)
+makeRecoveryCode()             -> 28-character Crockford base32 code shown once; returns the Argon2id-encrypted share blob for the server
+restoreFromRecoveryCode(code, blob) -> share
+```
+
+Every destructive action (rotate, revoke, Teammate change, export, delete) first
+evaluates the Secure Enclave key with the system biometric prompt, so Face ID on a
+device that already holds the share is enforced in code, not only in the interface.
+
+Argon2id parameters: memory 64 MiB, 3 iterations, parallelism 1, 16-byte salt,
+32-byte output. Recovery blob: `0x01 ‖ salt(16) ‖ nonce(12) ‖ AES-256-GCM(share) ‖
+tag(16)`, base64url. HPKE comes from Apple's CryptoKit, which sets the app's minimum
+iOS version at 17.
+
+The package will be published as its own repository with test vectors at
+`TestVectors/v1.json`; the server's test suite loads the same file, so both sides are
+checked against the same values.
+
+## 3. Screens that change or appear
+
+1. **Sign-up.** In testing: who the account is for, names and the athlete's date of
+   birth as a neutral age gate (under 13 is refused with a plain explanation; 13 to 17
+   requires a parent or legal guardian, who becomes the required Talent Teammate;
+   18 and over holds the account), then a clickwrap agreement with an unchecked box and
+   the linked Terms and Privacy Policy, with the accepted version recorded. Planned: a
+   third-parties panel naming every vendor and what it sees, then a Your key step that
+   creates the identity, shows the recovery code once, and explains that losing every
+   device and the code loses the private data.
+2. **Approve this device.** Planned. After a code is verified on an unknown device: a
+   short device code, "open Leave on a phone you already use and approve", and "use my
+   recovery code instead". Until then the app shows public data only.
+3. **Face ID lock.** Planned, on by default: on launch and on return from background
+   after 60 seconds; a blur replaces the app-switcher snapshot; private screens block
+   screenshots; the clipboard is cleared 30 seconds after a paste of private text.
+4. **Your key.** Planned, under Profile: status (created date, devices holding the
+   share, recovery code set or not), Rotate key, Revoke key with a 24-hour undo and
+   "Export data first", and Delete account, which runs Revoke first. All behind Face ID.
+5. **Connections.** Planned. Connecting an AI assistant happens on the web and grants
+   public data only; the app never takes part in the sign-in. The screen offers one add
+   row per supported assistant (Claude, ChatGPT, Gemini, and others as they support
+   custom connectors), each with a fallback card holding the address and three steps.
+   Connected assistants show their scopes, last use, unlock state, and a one-tap
+   disconnect. **Share private data** shows the assistant's data-retention notice word
+   for word, then Face ID, then the device-signed scope change and a grant for 15
+   minutes (default) or 1 hour; **Lock now** ends it. Athletes aged 13 to 17 never see
+   this control, and the server refuses it for them.
+6. **Unlock notification.** Planned. A locked private read sends a notification with an
+   Unlock action; one tap and Face ID posts a fresh grant. There is no silent background
+   renewal. A "connected" notification refreshes the list and doubles as the security
+   alert "Leave was connected to ChatGPT. Not you? Disconnect."
+7. **Add to Leave.** In testing today with the system camera and file pickers and a
+   simulated processing screen. Planned pipeline, all on the phone before any upload:
+   text from PDFs and Word files, on-device OCR for photos, Markdown plus the original
+   file each encrypted with a fresh data key and uploaded straight to storage through
+   a short-lived signed URL. If on-device OCR confidence is low the app asks before
+   sending the scan to Google's Document AI, naming the provider. Limits enforced
+   before upload: 25 MB, 60 pages, 10 uploads a day.
+8. **Cloud pickers.** Planned. Google Drive, OneDrive and Dropbox run entirely on the
+   phone through the system web-auth session; the token lives in memory only and the
+   server never sees it.
+9. **Talk to Leave.** In testing with simulated voice. Planned: on-device speech
+   recognition by default; if it is unavailable the app offers the server speech
+   service once and shows a persistent "audio leaving your phone" indicator whenever it
+   is used. Text-to-speech is off by default for private content.
+10. **Web matching in the background.** Planned. A background refresh (or a
+    content-available notification) builds a grant with the strand keys only, runs the
+    match, and completes any pending share wraps.
+11. **Plan and usage.** Planned: allowances used this month, the 80% nudge, and a soft
+    stop at 100% that finishes the current reply and offers "Add credits" (opens the
+    website in the browser) or "Wait for the 1st". Credits and subscriptions are bought
+    on the website, not through in-app purchase. Guardian-held accounts hide "Add
+    credits"; only the guardian can buy.
+
+## 4. Native modules
+
+| Module | Status | Backs |
+|---|---|---|
+| Crypto bridge | Planned | everything in section 2 |
+| App lock | Planned | biometric prompts, blur overlay, screenshot protection, clipboard expiry |
+| Document text | Planned | PDF extraction, on-device OCR with confidence |
+| Speech | Planned | on-device recognition with an availability check |
+| Background refresh | Planned | scheduled Web matching |
+| Attestation | Planned | App Check with App Attest on every API call |
+| Universal links | Planned | the main website domain only, for email links into the app; the sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
+| Push | Planned | notifications carry public facts only, never private content |
+| Crash reporting | Planned | Firebase Crashlytics with a filter that drops any email, strand or contract text before upload |
+| Events | Planned | feature events to Leave's own endpoint under a random per-install identifier that is never joined to the account |
+
+## 5. Decisions recorded (all 2026-09-23)
+
+- **Minimum age 13, no exceptions.** The age gate refuses a birth date under 13. Ages
+  13 to 17 use Leave through a parent or legal guardian, who is the required Teammate
+  and holds billing. Built.
+- **Key roles.** Share syncs and wraps; account key pair is derived from it; Secure
+  Enclave key is per-device identity. Planned.
+- **Share accessibility.** Readable after first unlock so background Web runs work,
+  with the trade-off recorded in the backend plan. Planned.
+- **Connecting an AI assistant is web-only and public-only.** Private access is turned
+  on afterwards in the app, per assistant, for at most 1 hour at a time, and never for
+  athletes aged 13 to 17. Planned.
+- **Assistants named in the app** are ChatGPT, Claude and Gemini. Built.
+- **Terms version.** The app records the accepted version (currently 2026-09-23) and
+  will ask for re-acceptance when it changes. Built.
+
+## 6. Build order (remaining)
+
+1. The crypto package with test vectors, plus the bridge; publishable on its own.
+2. Real sign-in routes behind the existing screens, device registration, new-device
+   approval, recovery code, Face ID lock and screen protection.
+3. Session grants and the API repositories; the mock data path stays behind a build
+   flag so test builds can keep running on fictional data.
+4. On-device contract pipeline, signed-URL uploads, cloud pickers.
+5. On-device speech with the opt-in fallback indicator.
+6. Background Web refresh.
+7. Connections: add rows, Share private data, Lock now, the unlock and connected
+   notifications.
+8. Usage meter, soft stops, credits link-out.
+9. Push, attestation, crash-report filter, events client.
+10. Publish the crypto repository and the app half of the security page.
+
+Steps 1 to 3 gate everything else. An independent penetration test of the app and the
+service is planned once Leave is funded, with findings and fixes summarized on the
+security page.
