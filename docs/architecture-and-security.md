@@ -6,7 +6,7 @@ Design, not yet built — status as of 2026-09-23.
 
 - **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com.
 - **Configured:** the WorkOS production environment (custom domain auth.leaveyouragent.com verified, client ID metadata documents and dynamic client registration on).
-- **Written, not applied:** the Terraform for the three stages, validated but not yet applied to Google Cloud.
+- **Written, not applied:** the Terraform for the three stages, validated but not yet applied to Google Cloud. Update 2026-09-23: applied on a minimal profile; application workloads not yet deployed.
 - **In progress:** the Node backend workspace is being scaffolded; the iOS app plan is written and the app is in development.
 - **Design:** the MCP server (see `mcp.md`), and everything else in this document unless a line says otherwise.
 
