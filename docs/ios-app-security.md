@@ -29,7 +29,7 @@ our hosting provider, or by a vendor outside a session the athlete started.
 | Release builds enforce strict App Transport Security (no local-network exception) | In testing |
 | Dependabot alerts and continuous checks on every change: typecheck, lint, tests, `npm audit`, registry signature and provenance verification | Built |
 | No analytics SDK, no advertising SDK, no Google Analytics in the app | Built |
-| System permission prompt only for the camera today, with a plain-language reason; microphone, speech and photo-library prompts arrive with their features | Built |
+| System permission prompts only for the camera and photo library today, each with a plain-language reason; microphone and speech prompts arrive with their features | Built |
 | No location, contacts or advertising-identifier access | Built |
 | App declares that it uses only exempt encryption (standard TLS) until the athlete-key module ships | Built |
 | Athlete-held encryption (the design in section 2) | Planned |
