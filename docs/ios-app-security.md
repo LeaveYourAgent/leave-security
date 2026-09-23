@@ -101,6 +101,7 @@ unwrapDataKey(blob, recordID)  -> dataKey (in memory only)
 newDataKey()                   -> 32 random bytes
 encryptRecord / decryptRecord  -> AES-256-GCM, wire nonce(12) ‖ ciphertext ‖ tag(16), AAD "leave:v1:<type>:<recordID>"
 makeGrant(serverRsaPub, sessionID, exp, keys) -> grant (32-byte session key sealed with RSA-3072-OAEP-SHA256 to a key held in the cloud HSM; each data key sealed under the session key with AAD "leave:v1:grant:<sessionID>:<recordID>"; exp at most 15 minutes)
+unwrapPending(accountWrappedDek, recordID) -> dataKey (HPKE open with the account private key, info "leave:v1:pending:<recordID>"); the app then share-wraps it and PUTs it back
 wrapForAccount(dataKey, accountPub, recordID) -> HPKE blob (DHKEM P-256, HKDF-SHA256, AES-256-GCM, info "leave:v1:xwrap:<recordID>"); used for the Teammate
 wrapShareForDevice(share, devicePub, approvalRequestID) -> HPKE blob (info "leave:v1:device-approve:<approvalRequestID>")
 signConfirmation(action, targetID, timestamp) -> Secure Enclave signature for the confirmation header
@@ -109,6 +110,18 @@ revokeShare()                  -> deletes the share locally and from iCloud Keyc
 makeRecoveryCode()             -> 28-character Crockford base32 code shown once; returns the Argon2id-encrypted share blob for the server
 restoreFromRecoveryCode(code, blob) -> share
 ```
+
+Wire details fixed in the API contract v1.2: the stored server blob is
+`KMS(shareWrappedDek)`, nested, so the server's own service accounts cannot read a
+record without the athlete's share; the app never sees the KMS layer. Records the
+server creates (Web threads, Talk receipts, pitch drafts, exports, notes added from an
+AI assistant) arrive as pending, wrapped with HPKE to the account public key; the app
+unwraps them with the key derived from the share, re-wraps them with the share, and
+returns them, after which only the share can open them. HPKE output is
+`enc(65-byte uncompressed P-256 point) ‖ ciphertext`, with binding through the info
+string and an empty HPKE AAD. Signatures are P-256 ECDSA, raw `r ‖ s` or DER.
+Record types for AAD: strand, contract, contractField, file, embedding, thread, pitch,
+receipt, export.
 
 Every destructive action (rotate, revoke, Teammate change, export, delete) first
 evaluates the Secure Enclave key with the system biometric prompt, so Face ID on a
