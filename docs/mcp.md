@@ -89,7 +89,7 @@ Our MCP server:
 
 - Runs inside the existing `api` Cloud Run service, with a second host rule on the existing load balancer. Cloud Armor, Binary Authorization and the warm instance (min-instances 1) come with it, so there is no cold start and no new service to run or secure.
 - MCP SDK v2 for TypeScript (`@modelcontextprotocol/server` + `@modelcontextprotocol/fastify`) with `createMcpHandler` in stateless mode. There are no session IDs and no session store; one handler serves both spec versions.
-- The read tools are model-free, so they never call Claude. Each call writes a `usage_events` row with `feature = "mcp"` and no private content.
+- The read tools are model-free, so they never call the model. Each call writes a `usage_events` row with `feature = "mcp"` and no private content.
 - Rate limits: 60 calls a minute and 600 a day per client, plus Cloud Armor per-IP limits and a flood guard on the MCP host and the OAuth routes.
 
 ### Tools
@@ -104,7 +104,7 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 | `list_contracts` | read | readOnly | Brand, status and dates only |
 | `get_contract` | read | readOnly | Terms and flags. **Needs an unlock** |
 | `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand); creates one embedding |
-| `add_contract` | write | not destructive | Sends a file into the contract pipeline (Claude Opus 5.5 extraction, Document AI only for unreadable scans) and draws from the contracts allowance (5 uploads / 100 pages a month) |
+| `add_contract` | write | not destructive | Sends a file into the contract pipeline (Gemini 3.8 Flash extraction, Document AI only for unreadable scans) and draws from the contracts allowance (5 uploads / 100 pages a month) |
 | `unlock_private` | action | readOnly | Sends the `mcp_unlock_request` push; doesn't return any data |
 
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
@@ -135,7 +135,7 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 - **Gemini:** "Gemini stores chats in your Google activity (on by default for 18 months), and human reviewers may read them."
 - **Other:** "This AI keeps what you share under its own privacy policy, which Leave can't control."
 
-These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Claude Opus 5.5 on Vertex AI, where Google may retain prompts up to 30 days solely for abuse monitoring, as described in `architecture-and-security.md`.
+These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Gemini 3.8 Flash on Vertex AI, where Google may retain prompts up to 30 days solely for abuse monitoring, as described in `architecture-and-security.md`.
 
 ## 7. Build order
 

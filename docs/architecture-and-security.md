@@ -20,10 +20,10 @@ Written 2026-09-22, security review 2026-09-23. One environment (production) for
 |---|---|---|
 | Account + sign-in | Emailed sign-in code (no password) for the app and for the MCP sign-in page. Adults hold their own account with one Talent Teammate seat. Athletes aged 13 to 17 are invited by a parent or legal guardian, who is their required Teammate. No one under 13 | WorkOS AuthKit with Magic Auth (the emailed six-digit code). The WorkOS iOS SDK expects a hosted page, so the API fronts it with `POST /auth/code` and `POST /auth/verify` (server-side WorkOS calls) and the designed Email and Code screens stay. Postgres for accounts/seats/ACLs keyed by the WorkOS user ID |
 | "Hey Leave" in ChatGPT, Claude, Gemini and other MCP-capable apps | Remote MCP server. Connecting happens on the web, signing in with the same emailed code as the app, and grants public data only | MCP served at the root of mcp.leaveyouragent.com inside the `api` service (MCP spec 2026-07-28, stateless, SDK v2), as an OAuth resource server; WorkOS AuthKit is the OAuth 2.1 authorization server (client ID metadata documents and dynamic client registration, PKCE, protected-resource metadata, resource indicators) on auth.leaveyouragent.com. Full design in `mcp.md` |
-| Talk to Leave (voice + type) | Live transcript, change receipts with Undo, on-device speech where available, spoken replies optional | On-device iOS speech with Chirp 3 streaming as an opt-in fallback; Text-to-Speech Chirp 3 HD for "read connections aloud"; Claude Opus 5.5 for the conversation |
-| Contracts | Upload PDF/DOC/DOCX/JPG/PNG/HEIC up to 25 MB / 60 pages from camera, Files, cloud pickers, or the AI chat; "Done in 41 seconds"; six-part explanation; brand colors + logo | The phone extracts the text first; Cloud Storage for the encrypted original, Cloud Tasks queue + Cloud Run worker (LibreOffice + HEIC conversion in the container), Document AI Layout Parser only for scans the phone cannot read (the athlete is told), Claude Opus 5.5 on Vertex AI with structured output to extract the six parts and flagged clauses, embeddings into pgvector, nodes and edges into Neo4j, Brandfetch Brand API |
+| Talk to Leave (voice + type) | Live transcript, change receipts with Undo, on-device speech where available, spoken replies optional | On-device iOS speech with Chirp 3 streaming as an opt-in fallback; Text-to-Speech Chirp 3 HD for "read connections aloud"; Gemini 3.8 Flash for the conversation |
+| Contracts | Upload PDF/DOC/DOCX/JPG/PNG/HEIC up to 25 MB / 60 pages from camera, Files, cloud pickers, or the AI chat; "Done in 41 seconds"; six-part explanation; brand colors + logo | The phone extracts the text first; Cloud Storage for the encrypted original, Cloud Tasks queue + Cloud Run worker (LibreOffice + HEIC conversion in the container), Document AI Layout Parser only for scans the phone cannot read (the athlete is told), Gemini 3.8 Flash on Vertex AI with structured output to extract the six parts and flagged clauses, embeddings into pgvector, nodes and edges into Neo4j, Brandfetch Brand API |
 | Files | 5 GB per athlete, contracts shared with the Teammate, everything else athlete-only, delete removes derived data; cloud imports (Drive, OneDrive, Dropbox) run on the phone | Cloud Storage with per-object metadata + signed URLs, Postgres ACL rows, KMS envelope keys |
-| The Leave Web | Private strands + public record + public signals (brand posts, casting calls, press, deal announcements, sponsor programs, own contracts); each thread = strand + signal + potential move; blocked-by-exclusivity edges with re-open dates | Neo4j knowledge graph (athletes, strands, signals, contracts, clauses, brands, markets and the edges between them), pgvector embeddings for candidate matching, Cloud Scheduler + Cloud Run Jobs for the signal crawlers, Claude web search for discovery, Claude Opus 5.5 for connection generation, FCM push for "new connection" |
+| The Leave Web | Private strands + public record + public signals (brand posts, casting calls, press, deal announcements, sponsor programs, own contracts); each thread = strand + signal + potential move; blocked-by-exclusivity edges with re-open dates | Neo4j knowledge graph (athletes, strands, signals, contracts, clauses, brands, markets and the edges between them), pgvector embeddings for candidate matching, Cloud Scheduler + Cloud Run Jobs for the signal crawlers, Grounding with Google Search for discovery, Gemini 3.8 Flash for connection generation, FCM push for "new connection" |
 | Profile | Public record from the talent database, private card, Teammate, Plan (Stripe portal), Export data, Connections (MCP clients) | Cloud SQL `talent` table holding records only for athletes who have signed up (the public record is looked up at sign-up; no profile is ever pre-built for someone who is not a user), Stripe Billing + webhooks, export job writing to Cloud Storage, MCP client table |
 | Learn series, Up Next, Accessibility | Static content, reminders, settings | App bundle + Postgres; Cloud Scheduler for payment/deliverable reminders |
 | Analytics events | tour_started, tour_step_viewed, etc., never attached to private data | First-party events table in Postgres, pseudonymous, exported to BigQuery in Leave's own project (Firebase Analytics dropped in the security review) |
@@ -36,7 +36,7 @@ Not needed on Google Cloud: Firebase Authentication or Identity Platform (WorkOS
 - **Postgres on Cloud SQL is the system of record.** Accounts, seats, the talent table, contracts and their extracted fields, strands, signals, files, the list of connected MCP clients per athlete (mirrored from WorkOS for the Connections screen), plus a `vector` column (pgvector) on every row that gets embedded.
 - **pgvector holds the embeddings.** Strands, signals, contract clauses, talent rows and connections are embedded with `gemini-embedding-001` on Vertex AI when written. Embeddings of private text are generated inside a session grant and stored encrypted (section 2c); the HNSW index covers public signals only. Matching starts as a nearest-neighbour query, which produces the candidate pairs the graph and the model then reason over.
 - **Neo4j holds the knowledge graph.** Nodes: Athlete, Strand, Signal, Contract, Clause, Brand, Market, Program. Edges: SAID, HAS_CONTRACT, HAS_CLAUSE, BLOCKS (with the clause end date), MENTIONS, IN_MARKET, CONNECTS. The Web screen, the "why it fits" evidence, and the blocked-until-August edges are graph queries. Neo4j is a projection rebuilt from Postgres (an outbox table plus a small sync job), so losing or resizing it never loses data. It runs self-hosted (Neo4j Community) on a Confidential VM inside the VPC with a CMEK disk and no public IP (review finding 6).
-- **Contract pipeline:** the phone extracts text first (PDFKit for PDFs, on-device DOCX conversion, Apple's Vision OCR for photos) and uploads Markdown plus the encrypted original → only for scans the phone cannot read, and only after the athlete is told and agrees, the worker sends the file to Document AI Layout Parser, which returns Markdown with headings, tables and page anchors → Claude Opus 5.5 with structured output extracts term, deliverables, usage rights, payment dates, exclusivity, termination, plus flagged clauses with plain-English notes → rows and embeddings into Postgres → nodes and edges into Neo4j → Brandfetch colors and logo → "Pending your OK".
+- **Contract pipeline:** the phone extracts text first (PDFKit for PDFs, on-device DOCX conversion, Apple's Vision OCR for photos) and uploads Markdown plus the encrypted original → only for scans the phone cannot read, and only after the athlete is told and agrees, the worker sends the file to Document AI Layout Parser, which returns Markdown with headings, tables and page anchors → Gemini 3.8 Flash with structured output extracts term, deliverables, usage rights, payment dates, exclusivity, termination, plus flagged clauses with plain-English notes → rows and embeddings into Postgres → nodes and edges into Neo4j → Brandfetch colors and logo → "Pending your OK".
 
 ## 2. Organization layout
 
@@ -59,7 +59,7 @@ Organization  leaveyouragent.com        (already exists: created by the Google W
 
 Why two projects instead of one: the seed project holds the things that must outlive or rebuild prod (state, CI identity, images) and gets a tighter IAM policy. Why not more: every extra project is another place to configure logging, alerts and IAM, and a one-person team gets nothing for it yet.
 
-Region: **us-central1** (Iowa). Every service used here is available there, including Claude on Vertex AI and Chirp 3. No multi-region anything at launch; Cloud SQL backups and the state bucket use the US multi-region for durability only.
+Region: **us-central1** (Iowa). Every service used here is available there, including Gemini on Vertex AI and Chirp 3. No multi-region anything at launch; Cloud SQL backups and the state bucket use the US multi-region for durability only.
 
 Domains: DNS and the marketing site stay at Cloudflare. DNS-only (grey cloud) records for `api.leaveyouragent.com` and `mcp.leaveyouragent.com` point at the Google load balancer with Google-managed certificates.
 
@@ -90,11 +90,11 @@ Domains: DNS and the marketing site stay at Cloudflare. DNS-only (grey cloud) re
 
 - Cloud Audit Logs: Admin Activity is on by default; Data Access logs are also enabled for Cloud SQL, Cloud Storage and Secret Manager in the production project (who opened which contract is something Leave may be asked for).
 - Security Command Center Standard tier at the org level.
-- Secret Manager for every third-party key (WorkOS API key and client secret, Brandfetch, Resend, Stripe, Apple push). Claude runs through Vertex AI with the service account's own identity, so there is no Anthropic key to store. Cloud Run mounts secrets; nothing lives in env files.
+- Secret Manager for every third-party key (WorkOS API key and client secret, Brandfetch, Resend, Stripe, Apple push). Gemini runs through Vertex AI with the service account's own identity, so there is no model API key to store. Cloud Run mounts secrets; nothing lives in env files.
 - Cloud KMS: one key ring with an HSM key that wraps every per-record data key together with the athlete's own key share, so "not Leave staff" in the private card is true in the cryptography. Section 2c has the full design.
 - Logging exclusions so request bodies, transcripts and strand text never land in Cloud Logging (the design promises "never logged").
 - Cloud Armor Standard on the load balancer: preconfigured WAF rules, per-IP rate limits on `/auth/*`, `/oauth/*` and uploads.
-- Firebase App Check on the mobile API so scripted clients cannot burn Claude tokens.
+- Firebase App Check on the mobile API so scripted clients cannot burn model tokens.
 - WorkOS AuthKit issues every user token. The API verifies WorkOS access tokens (JWTs) with the published JWKS; the MCP server does the same and checks the audience (the resource indicator) so a token minted for another resource cannot be replayed against it.
 
 ## 2b. Firewall, rate limiting and abuse controls
@@ -109,7 +109,7 @@ There is no single "firewall" box in this design. Protection is layered, and eac
 | VPC firewall | Lateral movement inside the network | No default network, so the implied deny stands. Explicit rules: the Cloud Run egress subnet to Cloud SQL on 5432 and to the Neo4j VM on 7687, and nothing else. No SSH from the internet, no bastion; the Neo4j VM is administered through OS Login |
 | Cloud SQL | Database exposure | Private IP only, no public address, no authorized networks, IAM database authentication, SSL required |
 | Neo4j on a Confidential VM | Database exposure | Self-hosted Neo4j Community inside the VPC: private IP only, no external IP, CMEK disk, reachable only from the Cloud Run egress subnet, credentials in Secret Manager. It holds opaque IDs and encrypted properties only |
-| Firebase App Check | Scripted clients calling the mobile API with a stolen token and burning Claude tokens | App Attest on iOS, Play Integrity on Android, enforced on every `api.` route the app uses. MCP traffic comes from the AI apps' servers (ChatGPT, Claude, Gemini and other MCP-capable apps), so it is covered by OAuth tokens and Cloud Armor instead |
+| Firebase App Check | Scripted clients calling the mobile API with a stolen token and burning model tokens | App Attest on iOS, Play Integrity on Android, enforced on every `api.` route the app uses. MCP traffic comes from the AI apps' servers (ChatGPT, Claude, Gemini and other MCP-capable apps), so it is covered by OAuth tokens and Cloud Armor instead |
 | Application rate limits (per user, not per IP) | The abuse Cloud Armor cannot see because it hides behind a valid account or many IPs | Counters in Postgres (a `rate_limits` table with a token bucket per key). Limits below |
 | Spend guardrails | A runaway loop or a scripted account turning into a large Vertex AI bill | Vertex AI and Document AI per-minute quotas set low; budget and forecast alerts; a daily Cloud Monitoring alert on Vertex usage over 2× the 7-day average |
 | Crawler egress | Server-side request forgery from a crafted "public signal" URL | The crawler job refuses private IP ranges and metadata addresses, follows at most 3 redirects, caps response size, and has no VPC access at all |
@@ -158,9 +158,9 @@ Hard caps the gateway enforces regardless of credits:
 | Concurrent model calls per account | 2 | |
 | Contract size | 25 MB, 60 pages; Document AI runs at most once per file hash | |
 | Context per Talk turn | last 20 turns plus a rolling summary, 12K tokens max | keeps each turn bounded as conversations grow |
-| Effort per route | `low` for receipts and short replies, `medium` for Talk, `high` for extraction and Web connections | Opus 5.5 defaults to `medium`; effort is set explicitly per route |
+| Thinking level per route | `low` for receipts and short replies, `medium` for Talk, pitch drafts and the crawler, `high` for contract extraction and Web connections | Gemini's thinking level is set explicitly per route, never left to the default |
 | Global daily Vertex usage | alert at 2× the 7-day average, page at 4× | |
-| Kill switch | a feature flag that drops effort to `low`, disables speaking, and pauses Web runs | an incident response that does not need a deploy |
+| Kill switch | a feature flag that drops the thinking level to `low`, disables speaking, and pauses Web runs | an incident response that does not need a deploy |
 
 Every model, Document AI, speech and embedding call writes one row to a `usage_events` table (athlete, feature, model, token and unit counts, request ID). Allowance counters are that table summed per billing period, checked before the call and decremented after. Private content never enters it.
 
@@ -212,12 +212,11 @@ Leave has to read strands and contracts to explain a clause or find a Web thread
 
 ### The AI layer is where the promise can break
 
-Whenever Leave sends a strand or a clause to a model, the plaintext leaves the sealed session. Two facts from Google's and Anthropic's current terms shape the choice of model:
+Whenever Leave sends a strand or a clause to a model, the plaintext leaves the sealed session. One fact from Google's current terms shapes what Leave can promise:
 
-- **Claude Fable 5 and Fable 5.1 are "Covered Models": prompts and responses are retained for 30 days and shared with Anthropic for abuse monitoring, and this cannot be waived on Vertex.** Using Fable on private data would mean Anthropic staff could, under their trust-and-safety process, read it for 30 days. Leave does not use Fable for that reason.
-- **Claude Opus 5.5 on Vertex is not a Covered Model, but Vertex AI itself may retain prompts and responses for up to 30 days solely for abuse monitoring** (automated classifiers, with human review only when a classifier flags a possible policy violation), stored in the customer's region and never used for training. Google offers an exception by request; Leave's request was denied on 2026-09-24.
+- **Vertex AI may retain prompts and responses for up to 30 days solely for abuse monitoring** (automated classifiers, with human review only when a classifier flags a possible policy violation), stored in the customer's region and never used for training. Google offers an exception by request; Leave's request was denied on 2026-09-24.
 
-Decision (updated 2026-09-25): **every model call runs on Claude Opus 5.5 on Vertex AI, and Google's 30-day abuse-monitoring retention is disclosed rather than avoided.** Leave weighed moving inference to another provider and chose to stay: the retention is Google's, for abuse monitoring only, never for training, and it sits inside the same window in which a model must see plaintext anyway. Leave says exactly what happens instead of implying a guarantee it cannot make. Opus 5.5 shipped on 2026-09-22, is in the Vertex Model Garden, and is not a Covered Model (Anthropic lists only Fable 5.1, Mythos 5.1, Fable 5 and Mythos 5). One model for everything, including the crawler. Speech-to-text runs on device; the Chirp 3 fallback does not log audio unless data logging is opted into, which it is not. Document AI processes a scanned contract and returns; it does not retain documents unless a dataset is configured, which it is not. Embeddings of private text are generated inside a grant and stored encrypted.
+Decision (updated 2026-09-25): **every model call runs on Gemini 3.8 Flash on Vertex AI (global endpoint), and Google's 30-day abuse-monitoring retention is disclosed rather than avoided.** Leave is not zero-retention and does not say it is. The retention is Google's, for abuse monitoring only, never for training, and it sits inside the same window in which a model must see plaintext anyway. Because the model is Google's own, no other AI company receives Leave data. One model for everything, including the crawler, which uses Grounding with Google Search with no athlete data in the prompt. The model id is configuration (`LEAVE_MODEL`), so moving to a newer Gemini is a configuration change, not a rewrite. Speech-to-text runs on device; the Chirp 3 fallback does not log audio unless data logging is opted into, which it is not. Document AI processes a scanned contract and returns; it does not retain documents unless a dataset is configured, which it is not. Embeddings of private text are generated inside a grant and stored encrypted.
 
 ### Google-side controls, layered under the cryptography
 
@@ -260,7 +259,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 
 ### Medium
 
-**9. Vendors learned about athletes through side channels.** Brandfetch queries revealed which brands an athlete has contracts with; crawler web searches could carry athlete specifics. Fix: Brandfetch lookups are keyed by brand only, cached globally, and never carry an athlete identifier; crawler queries are by market and sport, never by athlete; Claude web search calls run in the crawler only, with no athlete data in the prompt.
+**9. Vendors learned about athletes through side channels.** Brandfetch queries revealed which brands an athlete has contracts with; crawler web searches could carry athlete specifics. Fix: Brandfetch lookups are keyed by brand only, cached globally, and never carry an athlete identifier; crawler queries are by market and sport, never by athlete; Grounding with Google Search runs in the crawler only, with no athlete data in the prompt.
 
 **10. Firebase Analytics sent behavioral events to Google Analytics.** Fix: **drop Firebase Analytics.** The tour and feature events the design lists go to a first-party events table (the same pipeline as `usage_events`), pseudonymous, exported to BigQuery in Leave's own project. Firebase stays for push, crashes and App Check; Crashlytics gets a scrubber so no strand, contract or email text can reach a crash report.
 
@@ -285,7 +284,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 
 ### Explicitly accepted, and disclosed
 
-- While an athlete uses Leave, the records in use are plaintext in the API's memory and in the model's context at Google (Anthropic's model served by Vertex AI). Google may keep those prompts and responses for up to 30 days solely for abuse monitoring, never for training; Leave asked for that retention to be waived and Google declined. There is no way to explain a contract without reading it. The security page and the Privacy Policy say so.
+- While an athlete uses Leave, the records in use are plaintext in the API's memory and in the model's context at Google (Gemini on Vertex AI). Google may keep those prompts and responses for up to 30 days solely for abuse monitoring, never for training; Leave asked for that retention to be waived and Google declined. There is no way to explain a contract without reading it. The security page and the Privacy Policy say so.
 - Graph shape (counts, timestamps) and account metadata are visible to Leave. Support works from this only.
 - Cloud Run is not confidential hardware. If Google ships it, the sealed services move first.
 
@@ -304,10 +303,10 @@ iPhone app ──┐                                   ChatGPT / Claude / Gemini
              ├──► Cloud SQL Postgres 17 (private IP, pgvector, IAM auth)
              ├──► Cloud Storage files bucket (encrypted contracts, files, exports)
              ├──► Cloud Tasks "contracts"  ──► Cloud Run "worker" (min 0): phone-extracted Markdown
-             │                                  (Document AI only for unreadable scans) → Opus 5.5 structured
+             │                                  (Document AI only for unreadable scans) → Gemini structured  
              │                                  output → Postgres/pgvector → Neo4j → Brandfetch
              ├──► Secret Manager, Cloud KMS
-             ├──► Vertex AI: Claude Opus 5.5 (global endpoint, zero data retention) and gemini-embedding-001
+             ├──► Vertex AI: Gemini 3.8 Flash (global endpoint; Google search grounding for the crawler) and gemini-embedding-001
              ├──► Document AI Layout Parser (us)
              ├──► Neo4j Community on a Confidential VM in the VPC (private IP only)
              ├──► Speech-to-Text (opt-in fallback) / Text-to-Speech (Chirp 3)
@@ -333,15 +332,15 @@ Decided: the backend is Node.js. Everything below is what Google's own Cloud Run
 ### Versions and layout
 
 - **Node 24** (Active LTS). Node 26 becomes LTS in October 2026 and Node moves to one release a year from Node 27; upgrade in the first quiet week after 26 is promoted, not before launch.
-- **TypeScript, strict, ESM**, one pnpm workspace: `packages/api`, `packages/worker`, `packages/crawler`, `packages/shared` (Drizzle schema, Zod schemas, Claude prompts and tool definitions, Neo4j queries), `infra/` (Terraform). Same lockfile, same lint, one CI.
+- **TypeScript, strict, ESM**, one pnpm workspace: `packages/api`, `packages/worker`, `packages/crawler`, `packages/shared` (Drizzle schema, Zod schemas, model prompts and response schemas, Neo4j queries), `infra/` (Terraform). Same lockfile, same lint, one CI.
 - **Fastify** for `api`. It is the Node-native choice with schema validation, a pino logger built in, first-party plugins for multipart uploads, rate limiting and security headers, and an official middleware package in the MCP TypeScript SDK.
 - **MCP** through the official TypeScript SDK v2 (`@modelcontextprotocol/server` + `@modelcontextprotocol/fastify`, stateless) mounted at the root of `mcp.leaveyouragent.com`, with WorkOS AuthKit as the authorization server. See `mcp.md`.
 - **Drizzle ORM** on `pg` for Postgres: SQL-close, no generation step, pgvector `vector` columns and HNSW indexes are first-class, migrations with drizzle-kit run as a Cloud Run Job before each deploy. Cold starts are noticeably faster than Prisma, which matters on `worker` (min 0).
 - **Cloud SQL Node.js Connector** with `authType: 'IAM'`: no password, TLS 1.3, the service account is the database user.
 - **`neo4j-driver`**: one driver per process, a session per request, parameters only (never string-built Cypher), read and write sessions split so Web screen reads never queue behind the sync job.
-- **Claude on Vertex** with `@anthropic-ai/vertex-sdk` (`AnthropicVertex({ projectId, region: 'global' })`), model `claude-opus-5-5`. Three things to know about Opus 5.5: thinking is always on, and `output_config.effort` (default `medium`) is set explicitly per route: `low` for receipts and short replies, `high` for contract extraction and Web connections; forced `tool_choice` returns a 400, so extraction uses structured outputs rather than a forced tool; and it runs broader safety classifiers, so every response's `stop_reason` is checked for `refusal` before reading content. Streaming for Talk to Leave; `messages.parse()` with `output_config.format` built from the same Zod schema that types the contract row, so extraction is validated before it touches Postgres. Vertex's short-lived prompt cache is disabled for the project where Google allows it.
+- **Gemini on Vertex** with `@google/genai` (`new GoogleGenAI({ vertexai: true, project, location: 'global' })`), model `gemini-3.8-flash`, read from `LEAVE_MODEL`. Three things to know: thinking is billed as output, and `thinkingConfig.thinkingLevel` is set explicitly per route (`low` for receipts and short replies, `medium` for Talk, pitch drafts and the crawler, `high` for contract extraction and Web connections; 3.8 Flash rejects `minimal`); structured output uses `responseJsonSchema` built from the same Zod schema that types the contract row, so extraction is validated before it touches Postgres; and a blocked prompt or a safety finish reason is surfaced as a refusal error, never read as content. Streaming for Talk to Leave. The crawler alone adds the `googleSearch` tool (Grounding with Google Search).
 - **Document AI** via `@google-cloud/documentai`, **embeddings** via the Vertex AI SDK, **WorkOS** via `@workos-inc/node`, tokens verified with `jose` against the AuthKit JWKS.
-- **Zod at every boundary**: request bodies, environment variables at startup (fail fast on a missing secret), Claude structured outputs, webhook payloads from Stripe and WorkOS.
+- **Zod at every boundary**: request bodies, environment variables at startup (fail fast on a missing secret), model structured outputs, webhook payloads from Stripe and WorkOS.
 
 ### Containers
 
@@ -369,7 +368,7 @@ Decided: the backend is Node.js. Everything below is what Google's own Cloud Run
 ### Testing and delivery
 
 - **Vitest** with Testcontainers for Postgres (with pgvector) and Neo4j, so the sync job and the HNSW queries are tested against real engines. Contract fixtures come from the pitch deck's mock data (Smoothie Spot, Northline, Elite Camp Series), never real athletes.
-- Recorded Claude and Document AI responses for unit tests; one live smoke test against Vertex in CI on `main` only.
+- Recorded model and Document AI responses for unit tests; one live smoke test against Vertex in CI on `main` only.
 - GitHub Actions with Workload Identity Federation: typecheck, lint (Biome), test, build, sign, push to Artifact Registry, run the migration Job, deploy with 10% traffic, promote after the uptime check passes.
 
 ## 4. Build order
@@ -403,13 +402,13 @@ Status markers: **done** means configured or live today; everything else is desi
 14b. Domain hygiene at Cloudflare: DNSSEC, registrar lock, CAA, HSTS preload, SPF, DKIM, DMARC at reject; load balancer TLS policy 1.2 minimum; certificate-transparency monitoring.
 
 **Phase 3, third parties (in parallel with phase 2)**
-15. Vertex AI: enable Claude Opus 5.5 in Model Garden, grant `api` and `worker` the Vertex AI User role, test structured output and gemini-embedding-001 from `worker` on the global endpoint.
+15. Vertex AI: enable Gemini 3.8 Flash, grant `api` and `worker` the Vertex AI User role, test structured output and gemini-embedding-001 from `worker` on the global endpoint.
 16. Brandfetch, Resend (sending domain already verified for the marketing site; WorkOS sends the Magic Auth email itself, Resend stays for welcome and product email from chris@leaveyouragent.com), Stripe: the Base plan, credit top-ups and auto-refill, and the webhook endpoint. Apple Developer Program and App Store Connect (external-link entitlement for web billing), Google Play console.
 16a. The `usage_events` table, the allowance checks in the API gateway, the daily and monthly caps, the kill-switch flag, and the usage screen in the app.
 
 **Phase 4, go-live checklist**
 17. Restore a Cloud SQL backup into a scratch instance and delete it (proves the backups work).
-18. Load test the upload path at 20 concurrent contracts; confirm the 41-second target (phone extraction plus one Opus 5.5 pass, with Document AI only for scans) and that Cloud Tasks drains.
+18. Load test the upload path at 20 concurrent contracts; confirm the 41-second target (phone extraction plus one Gemini pass, with Document AI only for scans) and that Cloud Tasks drains.
 18a. Drop and rebuild the Neo4j graph from Postgres through the sync job, proving the graph is a projection and not a second source of truth.
 19. Walk the delete path: delete a contract, confirm the object, the explanation rows, the strand edges and the KMS-wrapped text are gone.
 20. Confirm Data Access logs show nothing from strands or transcripts.
@@ -444,6 +443,9 @@ The independent penetration test is not on this checklist: it happens once Leave
 - MCP plan written (`mcp.md`) and reconciled: connecting happens on the web and grants public data only; private access is switched on in the app; no custom OAuth scope (`openid offline_access`); MCP served at the root path; spec 2026-07-28 with SDK v2; 5-minute access tokens; unlocks of 15 minutes or 1 hour held in memory only; athletes aged 13 to 17 cannot share private data with AI apps; the Claude directory listing waits for funding and Claude users add Leave as a custom connector until then.
 - The independent penetration test happens once Leave is funded, then annually.
 
+**2026-09-25**
+- Every model call moved from Claude Opus 5.5 (Anthropic, served by Vertex AI) to Gemini 3.8 Flash on Vertex AI, global endpoint. Anthropic no longer processes any Leave data. The crawler uses Grounding with Google Search instead of Claude web search, with no athlete data in the prompt. Gemini's thinking level (low, medium, high per route) replaces Claude's effort setting. The model id is configuration, so a newer Gemini is a configuration change. Google's 30-day abuse-monitoring retention still applies and is disclosed.
+
 ## Sources
 
 - Landing zone design: https://docs.cloud.google.com/architecture/landing-zones and https://docs.cloud.google.com/architecture/landing-zones/decide-security
@@ -460,8 +462,7 @@ The independent penetration test is not on this checklist: it happens once Leave
 - Crypto-shredding on Google Cloud: https://oneuptime.com/blog/post/2026-02-17-how-to-set-up-crypto-shredding-for-gdpr-right-to-erasure-compliance-in-google-cloud/view
 - Tink AEAD: https://developers.google.com/tink/aead
 - Vertex AI abuse monitoring and zero data retention: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/abuse-monitoring, https://cloud.google.com/vertex-ai/generative-ai/docs/vertex-ai-zero-data-retention
-- Anthropic API data retention and Covered Models: https://platform.claude.com/docs/en/manage-claude/api-and-data-retention, https://support.claude.com/en/articles/15425996-data-retention-practices-for-covered-models
-- Claude Opus 5.5 announcement and Vertex listing: https://www.anthropic.com/claude-opus-5-5, https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/claude/opus-5-5
+- Gemini on Vertex AI, thinking and Grounding with Google Search: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/thinking, https://docs.cloud.google.com/vertex-ai/generative-ai/docs/grounding/grounding-with-google-search
 - Access Transparency and Access Approval: https://docs.cloud.google.com/assured-workloads/access-transparency/docs/overview, https://docs.cloud.google.com/assured-workloads/access-approval/docs/overview
 - Cloud EKM and Key Access Justifications: https://docs.cloud.google.com/kms/docs/ekm, https://docs.cloud.google.com/assured-workloads/key-access-justifications/docs/overview
 - Confidential Space: https://docs.cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-overview

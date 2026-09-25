@@ -101,7 +101,7 @@ Any request that reads private data also carries `X-Leave-Grant`; if the instanc
 
 ## 7. Contracts, files, uploads
 
-The phone extracts a contract's text first (PDFKit for PDFs, on-device DOCX conversion, Apple's Vision OCR for photos) and uploads Markdown alongside the encrypted original. Document AI is used only for scans the phone cannot read, and only after the athlete is told and agrees. The worker then runs Claude Opus 5.5 structured extraction.
+The phone extracts a contract's text first (PDFKit for PDFs, on-device DOCX conversion, Apple's Vision OCR for photos) and uploads Markdown alongside the encrypted original. Document AI is used only for scans the phone cannot read, and only after the athlete is told and agrees. The worker then runs Gemini 3.8 Flash structured extraction.
 
 `POST /uploads` `{ kind: "contract"|"file", contentType, sizeBytes, sha256 }` → `{ uploadId, signedUrl, expiresAt, remainingToday }`. The client encrypts before PUT to the signed URL (record type `file` or `contract`, AAD uses `uploadId`).
 `POST /contracts` `{ uploadId, markdownUploadId?, ocrByGoogle: false|true, pageCount, dek: { shareWrappedDek } }` → `{ contractId, status: "processing", etaSeconds }`. `ocrByGoogle` may be true only after the athlete agreed on screen; the server rejects a scan without Markdown unless it is true. Requires a grant containing the contract's DEK.
@@ -119,7 +119,7 @@ Client-side conversion notes (from the app plan, recorded here so the server mat
 
 ## 8. Web, Talk, pitches
 
-`POST /web/run` (grant with strand DEKs) → `{ runId, newConnections: n, remainingToday }`. The server decrypts strand embeddings in memory, queries the public HNSW index, asks Claude Opus 5.5 to score and phrase candidates, and writes threads encrypted under new DEKs (share-wrap pending, section 6).
+`POST /web/run` (grant with strand DEKs) → `{ runId, newConnections: n, remainingToday }`. The server decrypts strand embeddings in memory, queries the public HNSW index, asks Gemini 3.8 Flash to score and phrase candidates, and writes threads encrypted under new DEKs (share-wrap pending, section 6).
 `GET /web` → `{ strands: [{ recordId, encrypted }], signals: [...public...], connections: [{ recordId, encrypted, blockedUntil?, evidence: [...public...] }] }`.
 `POST /talk` (SSE; grant with the strands and contract the turn touches) `{ text?, audioTranscript?, context: { contractId? } }` → events `token`, `receipt` (encrypted change list with undo tokens), `done { usage }`.
 `POST /talk/undo` `{ undoToken }` → `204`.
