@@ -1,6 +1,6 @@
 # Leave on Google Cloud: architecture and security
 
-Design, not yet built — status as of 2026-09-23.
+Design, partly built — status as of 2026-09-25.
 
 **What exists today**
 
@@ -433,7 +433,7 @@ The independent penetration test is not on this checklist: it happens once Leave
 
 **2026-09-23**
 - Private data is encrypted so only the athlete can read it: per-record data keys wrapped by both a Cloud KMS HSM key and an athlete key share held on the phone and in iCloud Keychain, with a revoke control in the app (section 2c).
-- Every model call runs on Claude Opus 5.5 on Vertex AI. Google may retain prompts up to 30 days for abuse monitoring only; Leave's request to waive that was denied on 2026-09-24 and the retention is disclosed. Fable 5.1 is not used because it also carries mandatory retention shared with Anthropic.
+- Every model call runs on Gemini 3.8 Flash on Vertex AI (Claude Opus 5.5 until 2026-09-25). Google may retain prompts up to 30 days for abuse monitoring only; Leave's request to waive that was denied on 2026-09-24 and the retention is disclosed. Fable 5.1 is not used because it also carries mandatory retention shared with Anthropic.
 - Contracts: the phone extracts the text first; Document AI is used only for scans the phone cannot read, with the athlete told. This replaces the earlier plan to send every contract to Document AI.
 - Security review applied (section 2d): the athlete share never leaves the phone; AI apps get private data only by explicit per-client opt-in; Binary Authorization with signed images; locked audit logs; new-device approval; Neo4j self-hosted on a Confidential VM in the VPC (replacing a hosted graph database); on-device cloud imports; Firebase Analytics dropped; trust package published before launch.
 - Minimum age is 13, with a parent or legal guardian as account holder for athletes aged 13 to 17. There is no under-13 path.

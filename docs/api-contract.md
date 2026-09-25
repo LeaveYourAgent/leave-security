@@ -1,6 +1,6 @@
 # Leave API contract, v1.1
 
-Design, not yet built — status as of 2026-09-23.
+Design, partly built — status as of 2026-09-25.
 
 **What exists today**
 
