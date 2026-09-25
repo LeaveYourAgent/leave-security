@@ -160,7 +160,7 @@ Distribution: Claude users add Leave as a custom connector until Leave can apply
 Push payloads (APNs, `content-available` where noted; never private content):
 - `new_sign_in`: `{ type, deviceName, model, city, at }`
 - `device_approval_request`: `{ type, approvalRequestId, deviceName, model }`
-- `new_public_connection`: `{ type, market, signalKind }` (text like "A new casting call in Dallas")
+- `new_public_connection`: `{ type, market, signalKind }` (text like "A new casting call in Philadelphia")
 - `usage_nudge`: `{ type, allowance, percent }`
 - `web_run_wanted`: `{ type }` (`content-available`, prompts a background matching run)
 - `payment_due`: `{ type, contractId, dueDate }` (the brand name is shown only after decryption in the app)
