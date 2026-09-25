@@ -1,4 +1,4 @@
-# Leave API contract, v1.1
+# Leave API contract, v1.3
 
 Design, partly built — status as of 2026-09-25.
 
@@ -37,9 +37,9 @@ Conventions: base `https://api.leaveyouragent.com/v1`. JSON bodies. `Authorizati
 
 `POST /auth/code` `{ email }` → `202 {}` always (no account enumeration). The server calls WorkOS Magic Auth with its API key; the email comes from Leave's own domain via auth.leaveyouragent.com. Rate limits per section 2b of `architecture-and-security.md`.
 
-`POST /auth/verify` `{ email, code, device: { name, model, publicKey (SE P-256, SPKI), attestation (App Attest) } }` →
+`POST /auth/verify` `{ email, code, device?: { name, model, publicKey (SE P-256, SPKI), attestation (App Attest) } }` →
 `200 { accessToken, refreshToken, accountId, isNewUser, deviceId, deviceApproved, approvalRequestId? }`
-`deviceApproved` is true for the first device on a new account and false for any later device until section 4 completes.
+`deviceApproved` is true for the first device on a new account and false for any later device until section 4 completes. Errors: `invalid_code` (400; five wrong attempts invalidate the code), `code_expired` (400, after 10 minutes), `rate_limited` (429 with `retryAfter`). `device` may be omitted (v1.3): the token is then device-less, `deviceId` is null, and it may call only the device-less routes listed in section 4; the first device registered on an account with no approved device is approved automatically. No private data can exist on an account until it has an approved device.
 
 `POST /auth/refresh` `{ refreshToken }` → `200 { accessToken, refreshToken }`. Access tokens 15 min, refresh 30 days, rotated on use.
 
@@ -74,7 +74,7 @@ Teammate change of phone: the Teammate's share syncs through their own iCloud Ke
 `GET /devices/pending` → `[{ approvalRequestId, deviceId, name, model, requestedAt, wrappedShare? }]` (the new device polls until `wrappedShare` appears, or the recovery code path is used instead).
 `DELETE /devices/{id}` → `204`, device-signed.
 
-Unapproved device scope: an access token from `/auth/verify` with `deviceApproved: false` may call only `GET /account`, `GET /devices`, `GET /devices/pending`, `GET /recovery`, `POST /devices/{id}/activate`, `POST /auth/refresh`, `POST /auth/logout`, `GET /usage` and `POST /events`. Every other route returns `403` with `error.code = "device_unapproved"`, so the app renders the approval screen from that code. After the recovery-code path, the device proves possession of the share with `POST /devices/{id}/activate` `{ proof }` where proof is a signature by the account key pair over `deviceId ‖ accountId`; the server verifies against the registered account public key and marks the device approved.
+Unapproved or device-less scope: an access token from `/auth/verify` with `deviceApproved: false` (or no device) may call only `GET /account`, `POST /account/profile`, `POST /consent`, `GET /devices`, `POST /devices`, `GET /devices/pending`, `GET /recovery`, `POST /devices/{id}/activate`, `POST /auth/refresh`, `POST /auth/logout`, `GET /usage`, `POST /events`, and `DELETE /account` while the account has no approved device (see section 5). Every other route returns `403` with `error.code = "device_unapproved"`, so the app renders the approval screen from that code. After the recovery-code path, the device proves possession of the share with `POST /devices/{id}/activate` `{ proof }` where proof is a signature by the account key pair over `deviceId ‖ accountId`; the server verifies against the registered account public key and marks the device approved.
 
 Destructive-action confirmation: the app signs `action ‖ targetId ‖ timestamp` with the SE key (biometric prompt) and sends `X-Leave-Confirm: <base64url JSON { deviceId, timestamp, signature }>`. Required on: teammate invite/remove, key rotate, key revoke, export, delete account, device removal, turning on private data for an MCP client, guardian consent changes. Timestamp within 5 minutes.
 
@@ -85,7 +85,7 @@ Destructive-action confirmation: the app signs `action ‖ targetId ‖ timestam
 `POST /key/revoke` device-signed → `{ undoUntil }`. The server marks the account revoked; reads fail immediately; at `undoUntil` (24 h) the server deletes every share-wrapped DEK and the recovery blob. `POST /key/revoke/undo` within the window restores. The app deletes the share from Keychain and iCloud Keychain at revoke and can only undo if the athlete kept the recovery code.
 `GET /key` → `{ createdAt, rotatedAt, devices: n, recoverySet: bool, revoked?: { undoUntil } }`.
 
-`DELETE /account` device-signed → `202 { completesBy }` (30 days: revoke runs first, then ciphertext, metadata and backups are gone by `completesBy`). A guardian account with a linked athlete is refused with `error.code = "linked_athlete"` until the athlete's account is deleted or a replacement parent or guardian has accepted, so deleting a parent's account can never destroy or orphan the athlete's data.
+`DELETE /account` device-signed → `202 { completesBy }`. While the account has no approved device (nothing encrypted exists yet), the confirmation header is not required (v1.3). (30 days: revoke runs first, then ciphertext, metadata and backups are gone by `completesBy`). A guardian account with a linked athlete is refused with `error.code = "linked_athlete"` until the athlete's account is deleted or a replacement parent or guardian has accepted, so deleting a parent's account can never destroy or orphan the athlete's data.
 
 `POST /export` `{ dek: { shareWrappedDek } }` device-signed, 2 per day → `202 { exportId }`. `GET /export/{id}` → `{ status: "building"|"ready"|"expired", url?, expiresAt? }`. The archive (JSON plus original files) is encrypted under that DEK with AAD `leave:v1:export:<exportId>`, so support cannot read an export either. Ready within a day; the signed URL lives 7 days.
 
