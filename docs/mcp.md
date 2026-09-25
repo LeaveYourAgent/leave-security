@@ -135,7 +135,7 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 - **Gemini:** "Gemini stores chats in your Google activity (on by default for 18 months), and human reviewers may read them."
 - **Other:** "This AI keeps what you share under its own privacy policy, which Leave can't control."
 
-These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Claude Opus 5.5 on Vertex AI with zero data retention, as described in `architecture-and-security.md`.
+These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Claude Opus 5.5 on Vertex AI, where Google may retain prompts up to 30 days solely for abuse monitoring, as described in `architecture-and-security.md`.
 
 ## 7. Build order
 
