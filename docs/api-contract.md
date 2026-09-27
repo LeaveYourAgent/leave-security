@@ -1,4 +1,4 @@
-# Leave API contract, v1.3
+# Leave API contract, v1.4
 
 Design, partly built — status as of 2026-09-25.
 
@@ -131,7 +131,7 @@ The Base plan is $99 a month with a 30-day trial; its monthly allowances (300 ta
 
 `GET /usage` → `{ periodStart, periodEnd, trial: bool, allowances: { talks: { used, included }, contractPages: {...}, contracts: {...}, pitches: {...}, speakingMinutes: {...}, webRunsToday: { used, cap } }, credits: { balance, autoRefill: { enabled, monthlyCapUsd } } }`.
 Every metered response includes `usage: { talks: [used, included], credits: balance, nudge: null | "80" | "100" }`.
-`GET /billing/portal` → `{ url }` (Stripe customer portal on leaveyouragent.com; the app opens it in Safari). `GET /billing/credits/checkout?pack=1000` → `{ url }`.
+`GET /billing/portal` → `{ url }` (Stripe Customer Portal; the app opens it in Safari). `POST /billing/subscribe` → `{ url }` (Stripe Checkout for the $99 Base plan with a 30-day trial, card up front, once per account) or `{ portalUrl }` when a subscription already exists; holder only (`guardian_billing` for 13 to 17). `POST /billing/credits/checkout` `{ pack: 1000 }` → `{ url }` (replaces the earlier GET). `PUT /billing/auto-refill` `{ enabled, monthlyCapUsd }` → `204`. `GET /usage` also returns `plan: { status: "none" | "incomplete" | "trialing" | "active" | "past_due" | "canceled" | "unpaid", trialEnd, periodEnd, cancelAtPeriodEnd }`, derived from the guardian's subscription for 13 to 17. AI routes answer `402 subscription_required` when the status is `none`, `canceled`, `incomplete_expired` or `unpaid`; `trialing`, `active` and `past_due` have access. Credits are a Postgres ledger only; Stripe sells the packs and the plan (v1.4, 2026-09-27).
 Accounts for athletes aged 13 to 17: billing routes require the parent or guardian's token. Credits never expire while the subscription is active; they are forfeited 30 days after it ends except where a refund is required by law (the `credits` balance is zeroed by the reminders job on day 30 after cancellation).
 
 ## 10. MCP clients
