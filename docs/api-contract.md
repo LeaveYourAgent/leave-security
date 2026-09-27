@@ -1,14 +1,14 @@
-# Leave API contract, v1.4
+# Leave API contract, v1.5
 
-Design, partly built — status as of 2026-09-25.
+Design, mostly built, not yet serving — status as of 2026-09-27.
 
 **What exists today**
 
 - **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com.
 - **Configured:** the WorkOS production environment (custom domain auth.leaveyouragent.com verified, client ID metadata documents and dynamic client registration on). Section 10's token settings were checked against it on 2026-09-23.
-- **Written, not applied:** the Terraform for the three stages, validated but not yet applied.
-- **In progress:** the Node backend workspace that will serve these routes is being scaffolded; the iOS app plan is written and the app is in development.
-- **Design:** the MCP server (see `mcp.md`), and every route in this document.
+- **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services are defined but not deployed yet.
+- **Written and tested, not deployed:** the Node backend that serves these routes, including sign-in, records, the contract pipeline, the brands table, billing (section 9, Stripe webhooks verified on the raw body and processed by the worker) and the MCP server. The iOS app is in development.
+- **Design:** every route below is specified here before it serves traffic; `mcp.md` covers Leave inside the AI chats.
 
 v1.1 (2026-09-23) applies the mobile app review's eight items: full birth date, terms consent, athlete invite from a guardian account, account deletion, encrypted export, unapproved-device scope, contract AAD continuity, and rejection-sampled account key derivation.
 
@@ -131,7 +131,7 @@ The Base plan is $99 a month with a 30-day trial; its monthly allowances (300 ta
 
 `GET /usage` → `{ periodStart, periodEnd, trial: bool, allowances: { talks: { used, included }, contractPages: {...}, contracts: {...}, pitches: {...}, speakingMinutes: {...}, webRunsToday: { used, cap } }, credits: { balance, autoRefill: { enabled, monthlyCapUsd } } }`.
 Every metered response includes `usage: { talks: [used, included], credits: balance, nudge: null | "80" | "100" }`.
-`GET /billing/portal` → `{ url }` (Stripe Customer Portal; the app opens it in Safari). `POST /billing/subscribe` → `{ url }` (Stripe Checkout for the $99 Base plan with a 30-day trial, card up front, once per account) or `{ portalUrl }` when a subscription already exists; holder only (`guardian_billing` for 13 to 17). `POST /billing/credits/checkout` `{ pack: 1000 }` → `{ url }` (replaces the earlier GET). `PUT /billing/auto-refill` `{ enabled, monthlyCapUsd }` → `204`. `GET /usage` also returns `plan: { status: "none" | "incomplete" | "trialing" | "active" | "past_due" | "canceled" | "unpaid", trialEnd, periodEnd, cancelAtPeriodEnd }`, derived from the guardian's subscription for 13 to 17. AI routes answer `402 subscription_required` when the status is `none`, `incomplete`, `canceled`, `incomplete_expired` or `unpaid`; `trialing`, `active` and `past_due` have access. Checkout and portal sessions return to fixed static pages on leaveyouragent.com (`/billing/done`, `/billing/cancelled`, with `?credits=1` for credit packs); the app starts every purchase with its own token and opens the URL in Safari, and refetches `GET /usage` on foreground. Credits are a Postgres ledger only; Stripe sells the packs and the plan (v1.4, 2026-09-27).
+`GET /billing/portal` → `{ url }` (Stripe Customer Portal; the app opens it in Safari). `POST /billing/subscribe` → `{ url }` (Stripe Checkout for the $99 Base plan with a 30-day trial, card up front, once per account) or `{ portalUrl }` when a subscription already exists; holder only (`guardian_billing` for 13 to 17). `POST /billing/credits/checkout` `{ pack: 1000 }` → `{ url }` (replaces the earlier GET). `PUT /billing/auto-refill` `{ enabled, monthlyCapUsd }` → `204`. `GET /usage` also returns `plan: { status: "none" | "incomplete" | "trialing" | "active" | "past_due" | "canceled" | "unpaid", trialEnd, periodEnd, cancelAtPeriodEnd }`, derived from the guardian's subscription for 13 to 17; Stripe's `incomplete_expired` and `paused` are reported as `canceled`. AI routes answer `402 subscription_required` when the status is `none`, `incomplete`, `canceled`, `incomplete_expired` or `unpaid`; `trialing`, `active` and `past_due` have access. Checkout and portal sessions return to fixed static pages on leaveyouragent.com (`/billing/done`, `/billing/cancelled`, with `?credits=1` for credit packs); the app starts every purchase with its own token and opens the URL in Safari, and refetches `GET /usage` on foreground. Credits are a Postgres ledger only; Stripe sells the packs and the plan (v1.4, 2026-09-27).
 Accounts for athletes aged 13 to 17: billing routes require the parent or guardian's token. Credits never expire while the subscription is active; they are forfeited 30 days after it ends except where a refund is required by law (the `credits` balance is zeroed by the reminders job on day 30 after cancellation).
 
 ## 10. MCP clients
@@ -166,6 +166,7 @@ Push payloads (APNs, `content-available` where noted; never private content):
 - `payment_due`: `{ type, contractId, dueDate }` (the brand name is shown only after decryption in the app)
 - `mcp_connected`: `{ type, clientId, clientName, provider }` (refreshes Connections and doubles as a security alert: "Leave was connected to ChatGPT. Not you? Disconnect.")
 - `mcp_unlock_request`: `{ type, clientId, clientName, provider }` (one tap opens the unlock sheet; the app posts a grant with the chosen duration, 15 minutes or 1 hour; never sent to accounts aged 13 to 17)
+- `billing`: `{ type, reason }` with `reason` one of `trial_will_end`, `payment_failed`, `payment_action_required`, `refill_failed` (never an amount or card detail; the app refetches `GET /usage` and, for the payment reasons, offers the Customer Portal) (v1.5, 2026-09-27)
 
 ## 12. Age and consent
 
