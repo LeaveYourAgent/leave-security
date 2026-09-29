@@ -90,6 +90,8 @@ Unapproved or device-less scope: an access token from `/auth/verify` with `devic
 
 Destructive-action confirmation: the app signs `action ‖ targetId ‖ timestamp` with the SE key (biometric prompt) and sends `X-Leave-Confirm: <base64url JSON { deviceId, timestamp, signature }>`. Required on: teammate invite/remove, key rotate, key revoke, export, delete account, device removal, turning on private data for an MCP client, guardian consent changes. Timestamp within 5 minutes.
 
+A public key the account already has (not removed) resolves to that device on both `POST /auth/verify` (with `device`) and `POST /devices`: the same `deviceId` and its approval come back, an open approval request is re-used, and no second device is created, so a phone that lost its session but kept its Secure Enclave key never waits for approval from itself (v1.6).
+
 ## 5. Recovery and key lifecycle
 
 `PUT /recovery` `{ blob }` → `204` (replace). `GET /recovery` → `{ blob }` (only after `/auth/verify`; rate limited 5 per hour per account; each fetch notifies all devices).
