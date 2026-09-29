@@ -1,13 +1,13 @@
 # Leave on Google Cloud: architecture and security
 
-Design, mostly built, not yet serving — status as of 2026-09-27.
+Built and serving for beta testers — status as of 2026-09-29.
 
 **What exists today**
 
 - **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com.
 - **Configured:** the WorkOS production environment (custom domain auth.leaveyouragent.com verified, client ID metadata documents and dynamic client registration on).
-- **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys with the human deny policy, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services, the Neo4j VM and the NAT are defined but not deployed yet.
-- **Written and tested, not deployed:** the Node backend (sign-in, records, the contract pipeline, the brands table, Stripe billing with webhooks verified on the raw body and processed off the request path, and the MCP server). The iOS app is in development.
+- **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys with the human deny policy, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services are deployed; the Neo4j VM and the NAT come before beta.
+- **Serving:** the Node backend on Cloud Run behind the load balancer since 2026-09-29 (sign-in, records, the contract pipeline, the brands table, Stripe billing with webhooks verified on the raw body and processed off the request path, and the MCP server). Migrations and the per-workload database grants ran from the signed image through Binary Authorization. Push notifications and product email are switched on once their keys are loaded. The iOS app is in development.
 - **Design:** the MCP server (see `mcp.md`), and everything else in this document unless a line says otherwise.
 
 Written 2026-09-22, security review 2026-09-23. One environment (production) for the October 1 beta. Companion documents: `api-contract.md` (the routes the app calls and the cryptographic framing) and `mcp.md` (Leave inside ChatGPT, Claude, Gemini and other MCP-capable apps).

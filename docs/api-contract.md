@@ -1,13 +1,13 @@
 # Leave API contract, v1.5
 
-Design, mostly built, not yet serving — status as of 2026-09-27.
+Built and serving for beta testers — status as of 2026-09-29.
 
 **What exists today**
 
 - **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com.
 - **Configured:** the WorkOS production environment (custom domain auth.leaveyouragent.com verified, client ID metadata documents and dynamic client registration on). Section 10's token settings were checked against it on 2026-09-23.
-- **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services are defined but not deployed yet.
-- **Written and tested, not deployed:** the Node backend that serves these routes, including sign-in, records, the contract pipeline, the brands table, billing (section 9, Stripe webhooks verified on the raw body and processed by the worker) and the MCP server. The iOS app is in development.
+- **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services are deployed.
+- **Serving:** the Node backend behind api.leaveyouragent.com and mcp.leaveyouragent.com since 2026-09-29: sign-in, records, the contract pipeline, the brands table, billing (section 9, Stripe webhooks verified on the raw body and processed off the request path) and the MCP server. Push notifications and product email are switched on once their keys are loaded. The iOS app is in development.
 - **Design:** every route below is specified here before it serves traffic; `mcp.md` covers Leave inside the AI chats.
 
 v1.1 (2026-09-23) applies the mobile app review's eight items: full birth date, terms consent, athlete invite from a guardian account, account deletion, encrypted export, unapproved-device scope, contract AAD continuity, and rejection-sampled account key derivation.
