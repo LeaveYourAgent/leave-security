@@ -98,9 +98,11 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 
 | Tool | Reads/writes | Annotations | Data |
 |---|---|---|---|
-| `get_profile` | read | readOnly | Public record (for the mock athlete Jordan: school, position, class, followers) |
-| `get_public_signals` | read | readOnly, openWorld | Public signals in the athlete's markets (brand posts, casting calls, press) |
-| `get_web_threads` | read | readOnly, openWorld | Threads in the athlete's Leave Web. Public parts are always included; the private reason ("you told Leave…") only while unlocked |
+| `get_profile` | read | readOnly | Your public record in Leave: sport, position, team or school, class and follower counts; called first when the user greets Leave |
+The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions (v1.6.2).
+
+| `get_public_signals` | read | readOnly, openWorld | Public opportunities near you: casting calls, brand posts, sponsor programs, press |
+| `get_web_threads` | read | readOnly, openWorld | Threads in your Leave Web. Public parts are always included; the private reason ("you told Leave…") only while unlocked |
 | `list_contracts` | read | readOnly | Brand, status and dates only |
 | `get_contract` | read | readOnly | Terms and flags. **Needs an unlock** |
 | `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand); creates one embedding |
