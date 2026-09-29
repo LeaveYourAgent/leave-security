@@ -1,4 +1,4 @@
-# Leave API contract, v1.5
+# Leave API contract, v1.6 (2026-09-29)
 
 Built and serving for beta testers — status as of 2026-09-29.
 
@@ -9,6 +9,8 @@ Built and serving for beta testers — status as of 2026-09-29.
 - **Applied:** the Terraform for the three stages, on a small pre-launch profile: the production project, private network, Cloud SQL with IAM sign-in, HSM-backed KMS keys, Secret Manager, Cloud Armor and the load balancer with certificates for api. and mcp.leaveyouragent.com. The Cloud Run services are deployed.
 - **Serving:** the Node backend behind api.leaveyouragent.com and mcp.leaveyouragent.com since 2026-09-29: sign-in, records, the contract pipeline, the brands table, billing (section 9, Stripe webhooks verified on the raw body and processed off the request path) and the MCP server. Push notifications and product email are switched on once their keys are loaded. The iOS app is in development.
 - **Design:** every route below is specified here before it serves traffic; `mcp.md` covers Leave inside the AI chats.
+
+v1.6: public record routes (GET/PUT /account/public-record, confirm), lookup enqueued at sign-up.
 
 v1.1 (2026-09-23) applies the mobile app review's eight items: full birth date, terms consent, athlete invite from a guardian account, account deletion, encrypted export, unapproved-device scope, contract AAD continuity, and rejection-sampled account key derivation.
 
@@ -65,6 +67,16 @@ Conventions: base `https://api.leaveyouragent.com/v1`. JSON bodies. `Authorizati
 `DELETE /teammate` → `204`, device-signed; the server deletes every Teammate wrap. For an athlete aged 13 to 17 the parent or guardian is the Teammate and cannot be removed.
 
 Teammate change of phone: the Teammate's share syncs through their own iCloud Keychain, so the account key pair is the same on the new phone and existing wraps keep working. Teammate replaced: the athlete's app re-wraps every contract DEK to the new Teammate's public key and calls `PUT /contracts/{id}/teammate-key` for each; the old wraps are gone at `DELETE /teammate`.
+
+### Public record (v1.6, 2026-09-29)
+
+Leave looks up what is public about an athlete after they sign up, never before, and keeps no profile of anyone who has not signed up. When `POST /account/profile` creates an athlete account aged 18 or over, the API enqueues one lookup for the worker (`POST /tasks/public-record/lookup { accountId }` on Cloud Tasks with OIDC, named per account so it runs once). The worker asks Gemini on Vertex AI, grounded with Google Search, for the public record of the name on the account; an answer below 0.6 confidence, or no answer, writes nothing. The looked-up record is unconfirmed until the athlete confirms or corrects it in the app, and the lookup never writes over a record the athlete has edited or confirmed. For athletes aged 13 to 17 there is no lookup: Leave does not search the web for a minor by name, so their record starts empty and is written from the app.
+
+`GET /account/public-record` → `200 PublicRecord`, or `404` with `error.code = "public_record_none"` when no record exists yet.
+
+`PUT /account/public-record` `{ displayName?, sport?, position?, school?, classYear?, market?, height?, stats?, followers?, confirm: boolean }` → `200 PublicRecord`. An omitted field is unchanged and `null` clears one (except `displayName`). Strings are at most 120 characters, `height` at most 20 and `stats` at most 200; `market` is a lowercase slug such as `philadelphia`, the form the crawler uses; `followers` keys are `instagram`, `tiktok`, `x`, `youtube`, `threads` or `facebook`, with non-negative integer counts. With no record yet, the PUT creates one starting from the account's name. A field whose value differs from the stored one sets `source` to `"athlete"`; `confirm: true` sets `confirmedAt` to now and `confirm: false` leaves it as it was. No device-signed confirmation (nothing is destroyed). Athlete accounts only: a guardian or teammate account gets `403 athlete_only`, and an account without a profile gets `403 profile_required`.
+
+`PublicRecord` = `{ displayName, sport, position, school, classYear, market, height, stats, followers: { [platform]: count }, publicReach, dealsListed?, source: "lookup" | "athlete", sources: [{ url, title }], updatedAt, confirmedAt }`. `publicReach` is the sum of `followers`, derived on every response and never stored. `dealsListed` is the number of public deals the lookup found: present only when the lookup reported it, and not settable through PUT. `sources` lists the pages the lookup used (empty for a record the athlete wrote). `source` is `"lookup"` while the record is as the lookup found it and `"athlete"` once the athlete has changed a field; `confirmedAt` is null until the record is confirmed by the athlete, which the app shows as CONFIRMED BY YOU. The MCP tool `get_profile` returns the same fields except `sources` and `updatedAt`, with `source` and `confirmedAt` null when there is no record.
 
 ## 4. Devices and approvals
 
