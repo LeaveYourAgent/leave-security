@@ -91,7 +91,7 @@ Domains: DNS and the marketing site stay at Cloudflare. DNS-only (grey cloud) re
 
 - Cloud Audit Logs: Admin Activity is on by default; Data Access logs are also enabled for Cloud SQL, Cloud Storage and Secret Manager in the production project (who opened which contract is something Leave may be asked for).
 - Security Command Center Standard tier at the org level.
-- Secret Manager for every third-party key (WorkOS API key and client secret, Resend, Stripe, Apple push). Gemini runs through Vertex AI with the service account's own identity, so there is no model API key to store. Cloud Run mounts secrets; nothing lives in env files.
+- Secret Manager for every third-party key (WorkOS API key and client secret, Resend, Stripe). The Apple push key is uploaded to the Firebase project, where Firebase Cloud Messaging uses it; the services send push as their own service accounts, so no workload holds it. Gemini runs through Vertex AI with the service account's own identity, so there is no model API key to store. Cloud Run mounts secrets; nothing lives in env files.
 - Cloud KMS: one key ring with an HSM key that wraps every per-record data key together with the athlete's own key share, so "not Leave staff" in the private card is true in the cryptography. Section 2c has the full design.
 - Logging exclusions so request bodies, transcripts and strand text never land in Cloud Logging (the design promises "never logged").
 - Cloud Armor Standard on the load balancer: preconfigured WAF rules, per-IP rate limits on `/auth/*`, `/oauth/*` and uploads.
@@ -148,7 +148,7 @@ The Base plan is $99 a month on the web, with a 30-day trial. It includes a mont
 - **Trial:** half allowances (150 talks, 2 contracts, 60 speaking minutes).
 - **More usage: Leave credits**, 1,000 credits for $10, bought on leaveyouragent.com through Stripe; the app links out to the web. Auto-refill is off by default and, when turned on, has a monthly cap the athlete sets. Credits do not expire while the subscription is active. Unused credits are forfeited 30 days after the subscription ends, except where the law requires a refund (published in the Terms).
 - **Athletes aged 13 to 17:** only the parent or legal guardian can buy.
-- **What the athlete sees:** usage in Profile → Plan ("This month: 142 of 300 talks · 2 of 5 contracts · 34 of 120 speaking minutes · 250 credits"), reset on the billing day. At 80%, a push and an in-app line. At 100%, a soft stop: a Talk conversation always finishes its current reply, then offers "Add credits" or "Wait for the 1st"; contract upload shows the same choice before processing starts, never after.
+- **What the athlete sees:** usage in Profile → Plan ("This month: 142 of 300 talks · 2 of 5 contracts · 34 of 120 speaking minutes · 250 credits"), reset on the billing day. At 80%, a push and an in-app line. At 100%, a soft stop: a Talk conversation always finishes its current reply, then offers "Add credits" or "Wait for the plan to renew"; contract upload shows the same choice before processing starts, never after.
 - The Teammate seat draws from the athlete's allowance (their only AI action is "Ask about this contract").
 
 Hard caps the gateway enforces regardless of credits:
