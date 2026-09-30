@@ -79,6 +79,8 @@ Teammate change of phone: the Teammate's share syncs through their own iCloud Ke
 
 Read-only routes for an account that is the active Teammate of an athlete (a Teammate link with status `active`, not removed, on an athlete account that is not being deleted). Each one needs an approved device (`403 device_unapproved` otherwise) and answers `403 not_teammate` to any account that is not that athlete's active Teammate. There are no write routes.
 
+`PUT /records/{recordId}/teammate-key` `{ hpkeWrappedDek }` → `204` (v1.10.1): the athlete shares one Web thread with their Teammate the way a contract is shared, HPKE to the Teammate's account key with info `leave:v1:xwrap:<recordId>`, stored under the outer KMS wrap; only the athlete's own thread records, `404` otherwise. Once wrapped, the Teammate's `GET /teammate/athletes/{athleteId}/web` carries that connection's `encrypted` text and `GET /records/keys?ids=` returns its `teammateWrappedDek`.
+
 - `GET /teammate/athletes` → `[{ accountId, firstName, lastName, required }]`: every athlete this account is the active Teammate of, or an empty list; `required` is true when the Teammate is the athlete's parent or guardian.
 - `GET /teammate/athletes/{athleteId}/account-summary` → `{ accountId, firstName, role, plan: { status } }`: the athlete's first name, role and plan status (the same values as `plan.status` in `GET /usage`), nothing more.
 - `GET /teammate/athletes/{athleteId}/public-record` → `PublicRecord`, the same shape as `GET /account/public-record`, or `404 public_record_none`.
