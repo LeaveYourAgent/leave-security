@@ -211,9 +211,9 @@ checked against the same values.
 | Document text | In testing | PDF extraction, on-device OCR with confidence, Word files |
 | Speech | In testing | on-device recognition only, with an availability check; audio never leaves the phone |
 | Background refresh | Planned | scheduled Web matching |
-| Attestation | Planned | App Check with App Attest on every API call |
+| Attestation | In testing (build 26) | App Check with App Attest; the token rides on every API call in X-Firebase-AppCheck, report-only on the server until it enforces |
 | Universal links | Planned | the main website domain only, for email links into the app; the sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
-| Push | Planned | notifications carry public facts only, never private content |
+| Push | In testing (build 26) | Firebase Cloud Messaging through Swift Package Manager; the demo build carries no Firebase config and never registers; notifications carry one fixed sentence and record ids only, never private content; the token is taken off the account at sign-out |
 | Crash reporting | Planned | Firebase Crashlytics with a filter that drops any email, strand or contract text before upload |
 | Events | Planned | feature events to Leave's own endpoint under a random per-install identifier that is never joined to the account |
 
@@ -253,7 +253,7 @@ certificate pinning (done in build 21), App Attest and proportionate jailbreak a
 7. Connections: add rows, Share private data, Lock now, the unlock and connected
    notifications.
 8. Usage meter, soft stops, credits link-out.
-9. Push, attestation, crash-report filter, events client.
+9. ~~Push, attestation~~ (done); crash-report filter, events client.
 10. Publish the crypto repository and the app half of the security page.
 
 Steps 1 to 3 gate everything else. An independent penetration test of the app and the
