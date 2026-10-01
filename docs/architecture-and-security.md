@@ -134,7 +134,7 @@ There is no single "firewall" box in this design. Protection is layered, and eac
 
 ### Plan allowances and hard caps
 
-The Base plan is $99 a month on the web, with a 30-day trial. It includes a monthly allowance, and the gateway enforces hard caps regardless of anything the athlete has bought.
+The Base plan is $99 a month on the web, with a 14-day free trial. It includes a monthly allowance, and the gateway enforces hard caps regardless of anything the athlete has bought.
 
 | Allowance per month | Included |
 |---|---|
