@@ -213,7 +213,7 @@ checked against the same values.
 | Speech | In testing | on-device recognition only, with an availability check; audio never leaves the phone |
 | Background refresh | Planned | scheduled Web matching |
 | Attestation | In testing (build 26) | App Check with App Attest; the token rides on every API call in X-Firebase-AppCheck, report-only on the server until it enforces |
-| Universal links | Planned | the main website domain only, for email links into the app; the sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
+| Universal links | In testing (build 30) | leaveyouragent.com/billing/* only (the return from Stripe Checkout and the portal), plus the leaveyouragent:// scheme as the fallback page's button; the live app only. A link opens the Plan page and proves nothing: the plan changes only when Stripe's webhook reaches the server. The sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
 | Push | In testing (build 26) | Firebase Cloud Messaging through Swift Package Manager; the demo build carries no Firebase config and never registers; notifications carry one fixed sentence and record ids only, never private content; the token is taken off the account at sign-out |
 | Crash reporting | Planned | Firebase Crashlytics with a filter that drops any email, strand or contract text before upload |
 | Events | Planned | feature events to Leave's own endpoint under a random per-install identifier that is never joined to the account |
