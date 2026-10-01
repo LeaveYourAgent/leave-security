@@ -1,6 +1,6 @@
 # Leave on Google Cloud: architecture and security
 
-Built and serving for beta testers — status as of 2026-09-29.
+Built and serving for beta testers — status as of 2026-10-01.
 
 **What exists today**
 
@@ -290,6 +290,37 @@ Standard for this review: Leave is a security-first consumer company asking athl
 - Graph shape (counts, timestamps) and account metadata are visible to Leave. Support works from this only.
 - Cloud Run is not confidential hardware. If Google ships it, the sealed services move first.
 
+## 2e. Payments: Stripe
+
+Status as of 2026-10-01: **in testing**, built and verified end to end on Stripe's test environment (trial, renewal, failed card and retries, cancellation, a card that needs 3D Secure, a credit pack with a refund, and a dispute). No real payment is taken until Leave goes live.
+
+**Who is the seller.** Plans and credits are sold through Stripe Managed Payments, so Stripe (through its Link service) is the merchant of record. Stripe calculates, collects and remits sales tax, handles card disputes, and answers billing questions. Card statements read "LINK.COM* LEAVE YOUR A". Leave may move to selling directly with Stripe Tax later; this page will say so before it happens.
+
+**What Stripe gets from Leave:** the paying account holder's email address and an opaque Leave account ID. Nothing else: no contracts, no records, no Web, no athlete details. An athlete aged 13 to 17 is never a Stripe customer; the parent or guardian pays.
+
+**What Stripe collects itself, on its own pages:** the card or wallet, the name on it and the billing address (needed for tax). Card details are entered only on Stripe-hosted pages (Checkout and the customer portal), never in the app or on Leave's servers, which keeps Leave's card-data scope to the smallest level (PCI DSS SAQ A). Leave receives the card brand, the last four digits and the billing status, never the full number.
+
+**How a purchase flows**
+
+- The app never takes a payment. It opens Stripe Checkout or the customer portal in the phone's browser, and only on the United States App Store storefront; elsewhere, and on Android, it shows plan status with no price and no link.
+- When Stripe finishes, it returns the browser to `leaveyouragent.com/billing/…`, which the live app claims as a universal link (only that path, only the live app). The return link carries no payment data and is never treated as proof of payment.
+- Access and credits change **only** when Stripe's signed webhook arrives:
+  - the signature is checked against the raw request body with a 5-minute tolerance;
+  - the endpoint accepts traffic only from Stripe's published webhook addresses (Cloud Armor);
+  - each event is recorded once, in a database transaction, then processed off the request path, so a retry or duplicate never acts twice;
+  - every credit grant carries a unique Stripe reference, so a replay can't add credits again;
+  - a nightly job replays any event that was missed and compares subscriptions with Stripe.
+- Credits live in Leave's own ledger (Postgres). A refund or a lost dispute removes the unspent credits from that pack; nothing goes below zero.
+- An open card dispute pauses new purchases on that account until it is resolved. The plan and credits already held keep working.
+- Billing push notifications carry one fixed sentence per type ("There is an update on your Leave plan"), never an amount, date or card detail.
+
+**Keys**
+
+- The backend uses a restricted Stripe key limited to the operations it performs: it can write customers, Checkout and portal sessions, subscriptions, invoices and invoice items, and read prices, products, events, charges and disputes. It is held in Secret Manager.
+- There is no publishable key anywhere, because no client talks to Stripe directly.
+- The webhook signing secret is also in Secret Manager and is rolled every six months.
+- Live keys are never stored on a laptop; development uses Stripe's isolated test environment.
+
 ## 3. Production architecture in the production project
 
 ```
@@ -450,6 +481,10 @@ The independent penetration test is not on this checklist: it happens once Leave
 **2026-09-25**
 - Every model call moved from Claude Opus 5.5 (Anthropic, served by Vertex AI) to Gemini 3.8 Flash on Vertex AI, global endpoint. Anthropic no longer processes any Leave data. The crawler uses Grounding with Google Search instead of Claude web search, with no athlete data in the prompt. Gemini's thinking level (low, medium, high per route) replaces Claude's effort setting. The model id is configuration, so a newer Gemini is a configuration change. Google's 30-day abuse-monitoring retention still applies and is disclosed.
 
+**2026-10-01**
+- Payments documented (section 2e). Stripe Managed Payments makes Stripe the merchant of record, so Stripe handles sales tax and disputes. Stripe gets the account holder's email and an opaque account ID. Card entry stays on Stripe's pages. Access changes only on signed, IP-restricted, idempotent webhooks. Verified end to end on Stripe's test environment; not yet taking real payments.
+- The Stripe return opens the live app through a universal link limited to `leaveyouragent.com/billing/*`, with a fallback page. The link is never proof of payment.
+
 ## Sources
 
 - Landing zone design: https://docs.cloud.google.com/architecture/landing-zones and https://docs.cloud.google.com/architecture/landing-zones/decide-security
@@ -487,3 +522,8 @@ The independent penetration test is not on this checklist: it happens once Leave
 - Node.js security: https://nodejs.org/learn/getting-started/security-best-practices, https://cheatsheetseries.owasp.org/cheatsheets/NPM_Security_Cheat_Sheet.html
 - pino in production: https://betterstack.com/community/guides/logging/how-to-install-setup-and-use-pino-to-log-node-js-applications/
 - Zod request validation: https://1xapi.com/blog/validate-api-requests-zod-nodejs-2026
+- Stripe Managed Payments (merchant of record): https://stripe.com/managed-payments
+- Stripe webhooks (signatures, retries, duplicates, ordering): https://docs.stripe.com/webhooks, https://docs.stripe.com/billing/subscriptions/webhooks
+- Stripe webhook IP addresses: https://docs.stripe.com/ips
+- Stripe API key best practices: https://docs.stripe.com/keys-best-practices
+- iOS app-to-web checkout with universal links: https://docs.stripe.com/mobile/digital-goods/checkout
