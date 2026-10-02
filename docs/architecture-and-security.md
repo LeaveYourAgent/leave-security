@@ -28,7 +28,7 @@ Written 2026-09-22, security review 2026-09-23. One environment (production) for
 | Profile | Public record from the talent database, private card, Teammate, Plan (Stripe portal), Export data, Connections (MCP clients) | Cloud SQL `talent` table holding records only for athletes who have signed up (the public record is looked up at sign-up; no profile is ever pre-built for someone who is not a user), Stripe Billing + webhooks, export job writing to Cloud Storage, MCP client table |
 | Learn series, Up Next, Accessibility | Static content, reminders, settings | App bundle + Postgres; Cloud Scheduler for payment/deliverable reminders |
 | Analytics events | tour_started, tour_step_viewed, etc., never attached to private data | First-party events table in Postgres, pseudonymous, exported to BigQuery in Leave's own project (Firebase Analytics dropped in the security review) |
-| Mobile release | iOS and Android, push, crash reports | Firebase for FCM, Crashlytics and App Check only (no Firebase Auth, no Firebase Analytics), Apple Developer Program, Google Play |
+| Mobile release | iOS and Android, push, crash reports | Firebase for FCM and App Check only (no Firebase Auth, no Firebase Analytics, no Crashlytics: crash reports go to Leave's own API), Apple Developer Program, Google Play |
 
 Not needed on Google Cloud: Firebase Authentication or Identity Platform (WorkOS is the identity provider), Memorystore Redis at launch (Postgres covers rate-limit counters and job dedupe at this scale), GKE (Cloud Run does everything here), a separate vector database product (pgvector on Cloud SQL holds every embedding and is enough well past 10,000 athletes).
 
@@ -53,7 +53,7 @@ Organization  leaveyouragent.com        (already exists: created by the Google W
 │                                        Artifact Registry, org-level log sink destination
 │
 ├── Folder  prod
-│     └── Project  <prod-project>       everything that serves athletes (also the Firebase project for push, crashes, App Check)
+│     └── Project  <prod-project>       everything that serves athletes (also the Firebase project for push and App Check)
 │
 └── Folder  nonprod                     (empty until staging is wanted; same Terraform module, different tfvars)
 ```
@@ -263,7 +263,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 
 **9. Vendors learned about athletes through side channels.** A brand-data vendor would have learned which brands an athlete has contracts with; crawler web searches could carry athlete specifics. Fix: brand colors and logos come from Leave's own brands table (decided 2026-09-25; no vendor), and crawler queries are by market and sport, never by athlete; Grounding with Google Search runs in the crawler only, with no athlete data in the prompt.
 
-**10. Firebase Analytics sent behavioral events to Google Analytics.** Fix: **drop Firebase Analytics.** The tour and feature events the design lists go to a first-party events table (the same pipeline as `usage_events`), pseudonymous, exported to BigQuery in Leave's own project. Firebase stays for push, crashes and App Check; Crashlytics gets a scrubber so no strand, contract or email text can reach a crash report.
+**10. Firebase Analytics sent behavioral events to Google Analytics.** Fix: **drop Firebase Analytics.** The tour and feature events the design lists go to a first-party events table (the same pipeline as `usage_events`), pseudonymous, exported to BigQuery in Leave's own project. Firebase stays for push and App Check. Crash reports go to Leave's own API, not to Crashlytics: a report is numbers and values from fixed lists (where in the code an error happened, the build, the OS version, the device model) and has no field that can hold text, so no strand, contract or email text can reach one.
 
 **11. Speech fallback could send audio without asking.** Fix: the Chirp 3 fallback is opt-in per athlete, and the design's "announce when audio leaves the device" becomes a visible indicator each time it happens. Leave speaking (text-to-speech) sends the text of a thread to Google; the athlete can turn it off, and it is off by default for private strands.
 
@@ -346,7 +346,7 @@ iPhone app ──┐                                   ChatGPT / Claude / Gemini
              ├──► Neo4j Community on a Confidential VM in the VPC (private IP only)
              ├──► Speech-to-Text (opt-in fallback) / Text-to-Speech (Chirp 3)
              ├──► WorkOS AuthKit (identity, Magic Auth, OAuth 2.1 for MCP; webhooks back for user events)
-             └──► Firebase: FCM, App Check, Crashlytics (scrubbed)
+             └──► Firebase: FCM, App Check (crash reports go to Leave's own API, POST /v1/crash-reports)
 
    Cloud Scheduler ──► Cloud Run Jobs "crawler" (nightly public signals per market), "reminders" (payment / deliverable dates)
    Cloud Monitoring: uptime checks on both hosts, alert policies → email + SMS
@@ -429,7 +429,7 @@ Status markers: **done** means configured or live today; everything else is desi
 9a. Enable Access Transparency and Access Approval on the support plan. The Vertex AI abuse-monitoring exception was requested and denied (2026-09-24); the 30-day retention is disclosed instead.
 10. Cloud Run `api` and `worker`, Cloud Tasks queue, Cloud Run Jobs `crawler` and `reminders`, Cloud Scheduler triggers.
 11. Load balancer, Cloud Armor policy, managed certificates, the two DNS records at Cloudflare.
-12. Firebase on the production project: FCM with the APNs key, App Check, Crashlytics with a PII scrubber. No Firebase Auth, no Firebase Analytics.
+12. Firebase on the production project: FCM with the APNs key and App Check. No Firebase Auth, no Firebase Analytics, no Crashlytics: crash reports go to Leave's own API as a log line kept 30 days, with an email alert.
 12a. WorkOS: production environment, Magic Auth on, custom domain auth.leaveyouragent.com including the custom email domain for the code emails, branded hosted sign-in page, AuthKit for MCP with `https://mcp.leaveyouragent.com` as the resource, CIMD and DCR on (**done**); store the API key and client secret in Secret Manager and point the user-events webhook at `api` (design).
 13. Monitoring: uptime checks on `api` and `mcp`, alerts for 5xx rate, p95 latency, Cloud SQL CPU and storage, Cloud Tasks backlog, usage thresholds.
 14. GitHub Actions: build → cosign sign with SLSA provenance → push to Artifact Registry → Binary Authorization admits only that signature → deploy with 10% canary → promote.
@@ -455,6 +455,9 @@ Status markers: **done** means configured or live today; everything else is desi
 The independent penetration test is not on this checklist: it happens once Leave is funded, then annually (section 2d).
 
 ## Changelog
+
+**2026-10-02**
+- Crash reports go to Leave's own API, not to Firebase Crashlytics, which this document had planned and which was never added. A report is numbers and values from fixed lists (where in the code an error happened, the app build, the OS version, the device model) with no field that can hold text, no account or device identifier, and no sender address stored; it is kept 30 days as a log line, with an email alert. In the app from build 40, with a switch in Profile. The design is in the app repo's `docs/CRASH-REPORTING-PLAN.md`.
 
 **2026-09-22**
 - leaveyouragent.com is on Google Workspace, so the Google Cloud organization already exists.
