@@ -1,16 +1,17 @@
 # Leave in your AI chat: the MCP design
 
-Design, partly built — status as of 2026-09-25.
+Built and running; proven from one AI app. Status as of 2026-10-05.
 
 **What exists today**
 
-- **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com.
-- **Configured:** the WorkOS production environment (custom domain auth.leaveyouragent.com verified, client ID metadata documents and dynamic client registration on). Section 3 lists exactly what is set.
-- **Written, not applied:** the Terraform for the three stages, validated but not yet applied.
-- **In progress:** the Node backend workspace, which will host the MCP server, is being scaffolded; the iOS app plan is written and the app is in development.
-- **Design:** the MCP server itself, its tools, the in-app Connections screen and the `/connect` page. Everything below except the WorkOS state in section 3 is design.
+- **Running:** the MCP server at `https://mcp.leaveyouragent.com` (the discovery document, the token check and the eight tools in section 4), the sign-in at `auth.leaveyouragent.com`, and the page `leaveyouragent.com/connect`.
+- **Proven with a real account:** Claude only. A Claude custom connector signed in with the emailed code, listed the tools and read the public profile (2026-09-29 and 2026-09-30).
+- **Not yet proven:** ChatGPT, Gemini and every other app in section 2 have never connected to the production server. The private unlock from the phone (section 5) has not been walked end to end on a phone. Disconnect has been tested against a stand-in for WorkOS, not yet against WorkOS in production. Saving a note and adding a contract from an AI app have not been run with a real account.
+- **Not submitted:** no directory or store listing has been submitted for any AI app.
+- **In testing:** the Connections screen in the iOS app. Nothing app-side is called live until the app is in the App Store.
+- **Accounts:** Leave is invite-only for now, so connecting needs an account that already exists.
 
-This design builds on `architecture-and-security.md` (infrastructure and encryption) and `api-contract.md` v1.1 (the routes and push payloads it refers to). It is a public document, so it contains no keys, IDs or internal hostnames.
+This design builds on `architecture-and-security.md` (infrastructure and encryption) and `api-contract.md` (the routes and push payloads it refers to). It is a public document, so it contains no keys, IDs or internal hostnames.
 
 ## The goal
 
@@ -34,10 +35,12 @@ An athlete adds Leave to the AI they already use (ChatGPT, Claude, Gemini and ot
 
 ## 2. Per-client setup (what the athlete sees and what we must do)
 
+Only the Claude row has been tested with a real account. Every other row is taken from that provider's own documentation and has not been tested against Leave.
+
 | Client | How the athlete adds Leave | Auth | One-click listing | Limits to know |
 |---|---|---|---|---|
 | **Claude** (web, desktop, mobile) | Button → `claude.ai/customize/connectors?modal=add-custom-connector&mcpName=Leave&mcpServerUrl=https://mcp.leaveyouragent.com`. This link is **unofficial**, so fall back to "Customize → Connectors → Add custom connector → paste the address". | CIMD | Connectors Directory. The submitter must be a Claude Team or Enterprise org, and every tool needs a title and annotations. Leave applies after funding. | The Free plan allows 1 custom connector. Once listed, Leave doesn't count against that limit. Claude.ai is 18+. |
-| **ChatGPT** | Listed plugin (one click in the directory). Before listing, only Developer mode works. | CIMD, or DCR as a fallback. No static client ID. | Plugin directory on the OpenAI Platform. Needs business and domain verification, tool annotations, and 5 positive plus 3 negative test cases. | Free users can only add *listed* plugins, **so listing ChatGPT is required, not optional.** Publishing was not open in the EEA, UK and Switzerland at launch. |
+| **ChatGPT** | Listed plugin (one click in the directory). Before listing, only Developer mode works. | CIMD, or DCR as a fallback. No static client ID. | Plugin directory on the OpenAI Platform. Needs business and domain verification, tool annotations, and 5 positive plus 3 negative test cases. | Free users can only add *listed* plugins, so reaching them needs a listing. Nothing has been submitted (section 7). Publishing was not open in the EEA, UK and Switzerland at launch. |
 | **Gemini** | Settings → Connected Apps → Add a custom app → paste the address | DCR | No third-party directory | US only, 18+, and Keep Activity must be on. |
 | **Le Chat** | Connectors → Add custom MCP connector → paste | DCR | Built-in directory. The submission path is unclear, so we will ask Mistral. | Available on the Free plan. |
 | **Perplexity** | Settings → Connectors → custom → paste | DCR | None | Pro and above. |
@@ -58,7 +61,7 @@ WorkOS settings:
 - Both "Client ID Metadata Document" (off by default) and "Dynamic Client Registration" are on. ChatGPT, Claude and VS Code use CIMD. Gemini, Le Chat, Perplexity, Cursor and probably Grok need DCR.
 - Resource indicator `https://mcp.leaveyouragent.com`. The token `aud` must equal it exactly, with no trailing slash.
 - PKCE S256 is mandatory. Refresh tokens are always issued (`offline_access`). Access tokens last 5 minutes; refresh tokens last 30 days and rotate on use; a dead refresh token returns `invalid_grant`.
-- Redirect allowlist: Claude, both ChatGPT callbacks, Perplexity, Cursor, `vscode.dev/redirect`, and loopback (`localhost` and `127.0.0.1`, any port) for Claude Code and VS Code.
+- Redirect addresses come from each client's own registration (its metadata document, or dynamic registration). Loopback redirects (`localhost` and `127.0.0.1`, any port) were tested for Claude Code and VS Code.
 - Branded custom domain `auth.leaveyouragent.com`. The code emails come from Leave's own domain, which is the best defence against phishing lookalikes.
 
 Our MCP server:
@@ -80,10 +83,11 @@ Our MCP server:
 - Access tokens last 5 minutes (the WorkOS default). This is stricter than the 1 hour first planned, because a Disconnect takes effect within 5 minutes. Kept.
 
 **Checks to run against WorkOS before launch:**
-1. The authorization response includes `iss`. ChatGPT compares it exactly. (Needs a real sign-in once the MCP server exists.)
+1. The authorization response includes `iss`. ChatGPT compares it exactly. (Open: the sign-in server does not advertise it, and no ChatGPT sign-in has been run.)
 2. `token_endpoint_auth_methods_supported` includes `none`. Without it, Claude won't use CIMD. (Passes.)
 3. Loopback redirects work on any port. (Passes.)
-4. The hosted code field sets `autocomplete="one-time-code"`.
+4. The hosted code field sets `autocomplete="one-time-code"`. (Open.)
+5. The sign-in server advertises the device-code grant, which no supported AI app needs. (Open: WorkOS shows no switch for it, and the question to WorkOS has not been answered.)
 
 ## 4. The server
 
@@ -91,6 +95,9 @@ Our MCP server:
 - MCP SDK v2 for TypeScript (`@modelcontextprotocol/server` + `@modelcontextprotocol/fastify`) with `createMcpHandler` in stateless mode. There are no session IDs and no session store; one handler serves both spec versions.
 - The read tools are model-free, so they never call the model. Each call writes a `usage_events` row with `feature = "mcp"` and no private content.
 - Rate limits: 60 calls a minute and 600 a day per client, plus Cloud Armor per-IP limits and a flood guard on the MCP host and the OAuth routes.
+- Every tool call is recorded with the tool, the AI client and how it ended (ok, locked, private, refused or error). Arguments and results are never recorded.
+- A request from another site's `Origin` is refused. A token that does not name the client it was issued to is refused.
+- An account that is deleted loses its sign-in identity, so every AI connection it had stops and has to sign in again.
 
 ### Tools
 
@@ -98,16 +105,18 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 
 | Tool | Reads/writes | Annotations | Data |
 |---|---|---|---|
-| `get_profile` | read | readOnly | Your public record in Leave: sport, position, team or school, class and follower counts; called first when the user greets Leave |
-The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions (v1.6.2).
-
-| `get_public_signals` | read | readOnly, openWorld | Public opportunities near you: casting calls, brand posts, sponsor programs, press |
-| `get_web_threads` | read | readOnly, openWorld | Threads in your Leave Web. Public parts are always included; the private reason ("you told Leave…") only while unlocked |
+| `get_profile` | read | readOnly | Your public record in Leave: sport, position, team or school, class and follower counts |
+| `get_public_signals` | read | readOnly, openWorld | Public opportunities near you: casting calls, brand posts, sponsor programs, press. Each carries the day its page was published (or none), whether it is a standing program, and the day the crawl last found it. Only signals inside the age limit of `api-contract.md` are listed, and nothing says a program is open now |
 | `list_contracts` | read | readOnly | Brand, status and dates only |
 | `get_contract` | read | readOnly | Terms and flags. **Needs an unlock** |
-| `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand); creates one embedding |
-| `add_contract` | write | not destructive | Sends a file into the contract pipeline (Gemini 3.8 Flash extraction, Document AI only for unreadable scans) and draws from the contracts allowance (5 uploads / 100 pages a month) |
-| `unlock_private` | action | readOnly | Sends the `mcp_unlock_request` push; doesn't return any data |
+| `get_web_threads` | read | readOnly, openWorld | Threads in your Leave Web. Public parts are always included; the private reason ("you told Leave…") only while unlocked |
+| `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand); creates one embedding; 100 a day at most |
+| `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 3.8 Flash extraction) under the same plan, consent, page and storage checks as an upload from the app |
+| `unlock_private` | action | not read-only (it reaches the phone) | Sends the `mcp_unlock_request` push; returns no data. One push a minute and five an hour per AI client |
+
+The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions.
+
+For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. The same holds for a parent or guardian's view of that athlete's account (2026-10-04).
 
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
 
@@ -120,13 +129,15 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 
 - **The default is public only.** Private access is off for each client until the athlete turns it on in the app with Face ID (device-signed `PUT /mcp/clients/{id}/scopes`).
 - **Unlock:** the app posts a grant (`POST /mcp/clients/{id}/grant`, `ttlSeconds` 900 or 3,600; 1 hour is the maximum). The grant lives in API memory only and is never persisted. A restart or scale-out simply means the next private read asks again.
-- **Locked read:**
+- **Locked read** (built; not yet walked end to end on a phone):
   1. The tool returns "Private data is locked. Open Leave and tap Unlock for ChatGPT."
   2. The server sends `mcp_unlock_request { type, clientId, clientName, provider }` as an alert with an **Unlock** action.
   3. One tap and Face ID in the app post a new grant.
   4. The athlete asks the AI again.
 - **Writes always work.** The server wraps the new key, and the share-wrap completes on the next app session.
 - Push `mcp_connected { type, clientId, clientName, provider }` refreshes Connections, and it doubles as a security alert: "Leave was connected to ChatGPT. Not you? Disconnect."
+
+- **Disconnect** in the app refuses the client from the next request and deletes its authorization at WorkOS. Only a new sign-in brings it back, with private sharing off, and the athlete is told when it does. **Lock now** ends an unlock on every server instance.
 
 **Athletes aged 13 to 17 (decided 2026-09-23):** they can't share private data with any AI app. The toggle is hidden and the server refuses a private grant for their accounts with `minor_private_blocked`. Claude and Gemini are 18+ anyway. A minor's contracts sit under the parent or guardian relationship, and sending a minor's private data into a third-party chat under that chat's retention rules is not a trade-off Leave will make for them. Leave's minimum age is 13; there is no under-13 path.
 
@@ -139,16 +150,16 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 
 These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Gemini 3.8 Flash on Vertex AI, where Google may retain prompts up to 30 days solely for abuse monitoring, as described in `architecture-and-security.md`.
 
-## 7. Build order
+## 7. Build order, and where each step stands
 
-1. **WorkOS config** (section 3; done), then run the remaining checks.
-2. **MCP handler in `api`**: the protected-resource metadata, the token check, and the public read tools. Test it with the MCP Inspector, Claude Code and a Claude custom connector.
-3. **Writes** (`add_note`, `add_contract`) with the pending share-wrap.
-4. **App**: the Connections rows with Add buttons and fallback cards; the private toggle, the unlock sheet, Lock now, the `mcp_unlock_request` and `mcp_connected` pushes. Keep `auth.` and `mcp.` out of associated domains.
-5. **Site**: `leaveyouragent.com/connect`, with a button and a copy card per client.
-6. **Test each client end to end**: Claude, ChatGPT Developer mode, Gemini, Le Chat, Perplexity, Grok, Cursor, VS Code.
-7. **Submit** to the ChatGPT plugin directory now, and to the Claude Connectors Directory after funding. This needs the privacy and terms URLs, a demo account with the mock athlete Jordan, and the test cases.
-8. **Publish the security page section**, "What your AI can see", in plain language.
+1. **WorkOS config** (section 3). Done; three checks are open.
+2. **MCP handler in `api`**: the protected-resource metadata, the token check, and the public read tools. Done and running. Proven from a Claude custom connector.
+3. **Writes** (`add_note`, `add_contract`). Built and tested in the server's own tests. Not yet run from an AI app with a real account.
+4. **App**: the Connections screen with the private switch, the unlock, Lock now, Disconnect and the two pushes. Built; in testing. `auth.` and `mcp.` stay out of associated domains.
+5. **Site**: `leaveyouragent.com/connect`. Published.
+6. **Test each client end to end.** Claude: sign-in and public reads done; the private unlock, Lock now and Disconnect not yet walked. ChatGPT, Gemini, Le Chat, Perplexity, Grok, Cursor and VS Code: not tested.
+7. **Listings.** Nothing is submitted. A ChatGPT listing comes after ChatGPT has been tested end to end; it also needs OpenAI's verification of the company and domain, a reviewer sign-in that does not depend on an emailed code, and test cases. A Claude Connectors Directory listing waits for funding. Gemini has no third-party directory.
+8. **"What your AI can see"**, in plain language. Published on the connect page.
 
 ## Decisions (2026-09-23)
 
@@ -158,6 +169,7 @@ These notices are about the AI app's own retention. Leave's own model calls (for
 4. An unlock lasts at most 1 hour: 15 minutes by default, or 1 hour, held in memory only.
 5. The Claude directory listing waits for funding, because it needs a Claude Team org. Until then, Claude users add Leave as a custom connector through the button or the copy card. This is one click on paid plans. On the Free plan it takes the one custom-connector slot.
 6. Leave names ChatGPT, Claude, Gemini and other MCP-capable apps; it does not market clients athletes cannot connect on their own.
+7. (2026-10-04) The eight brand categories that are for athletes 18 and older are withheld from an athlete under 18 in AI connections too.
 
 ## Sources
 
