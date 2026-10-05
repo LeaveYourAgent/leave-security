@@ -116,7 +116,7 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 
 The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions.
 
-For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. The same holds for a parent or guardian's view of that athlete's account (2026-10-04).
+For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). Open: a parent or guardian's own connection is treated as an adult's, and whether it should carry the athlete's filter is being checked.
 
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
 
