@@ -98,6 +98,7 @@ Our MCP server:
 - Every tool call is recorded with the tool, the AI client and how it ended (ok, locked, private, refused or error). Arguments and results are never recorded.
 - A request from another site's `Origin` is refused. A token that does not name the client it was issued to is refused.
 - An account that is deleted loses its sign-in identity, so every AI connection it had stops and has to sign in again.
+- A person who signs in with no usable Leave account (none, sign-up unfinished, or being deleted) gets one plain sentence from every tool, for example "There is no Leave account for this sign-in. Leave accounts are made in the Leave app." No account data is read and no connection is recorded. Before 2026-10-05 the AI app was asked to sign in again without end. Covered by the server's tests; not yet seen with a real sign-in in production.
 
 ### Tools
 
