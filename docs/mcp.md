@@ -114,9 +114,9 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 | `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 3.8 Flash extraction) under the same plan, consent, page and storage checks as an upload from the app |
 | `unlock_private` | action | not read-only (it reaches the phone) | Sends the `mcp_unlock_request` push; returns no data. One push a minute and five an hour per AI client |
 
-The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions.
+The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions: what was published and when, and what is due or asked for. The instructions say that nothing in Leave says a program is open now. For an athlete under 18, and for a parent or guardian's connection, they also tell the AI to name no brand in the eight categories that are for athletes 18 and older (2026-10-05).
 
-For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). Open: a parent or guardian's own connection is treated as an adult's, and whether it should carry the athlete's filter is being checked.
+For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). A parent or guardian's own connection reads the guardian's own account, which holds none of the athlete's notes, contracts or threads, so it cannot reach the athlete's Web or private data. It is served as under 18 in both tools, so the eight categories are withheld there too (2026-10-05).
 
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
 
