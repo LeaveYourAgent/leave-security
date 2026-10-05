@@ -118,6 +118,8 @@ There is no single "firewall" box in this design. Protection is layered, and eac
 | Secrets and identities | Leaked keys | No service-account keys (org policy), Workload Identity for GitHub, Secret Manager with a yearly rotation reminder, one service account per workload |
 | Data | Exposure at rest, in a backup, in a vendor, or in a log | Two-part envelope encryption (Cloud KMS HSM key plus the athlete's key share, section 2c), CMEK on every store, uniform bucket access with public-access prevention, 15-minute signed URLs, Data Access audit logs, logging exclusions for transcripts and bodies |
 
+On the routes that carry a person's own words, individual signatures that misfire on ordinary prose are turned off, each recorded with the sentence that tripped it; the server never runs a command built from text.
+
 ### Per-user limits the app enforces itself
 
 | Action | Limit | Why |
