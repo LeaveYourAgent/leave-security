@@ -1,6 +1,6 @@
 # Leave in your AI chat: the MCP design
 
-Built and running; proven from one AI app. Status as of 2026-10-05.
+Built and running; proven from one AI app. Status as of 2026-10-06.
 
 **What exists today**
 
@@ -112,11 +112,13 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 | `list_contracts` | read | readOnly | Brand, status and dates only |
 | `get_contract` | read | readOnly | Terms and flags. **Needs an unlock** |
 | `get_web_threads` | read | readOnly, openWorld | Threads in your Leave Web. Public parts are always included; the private reason ("you told Leave…") only while unlocked |
-| `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand); creates one embedding; 100 a day at most |
+| `add_note` | write | not destructive | Saves something the athlete tells the AI as an encrypted private note (strand) and creates one embedding with Google's embedding model; 100 a day at most. Needs Leave's AI to be on for the account (since 2026-10-06) |
 | `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 3.8 Flash extraction) under the same plan, consent, page and storage checks as an upload from the app |
 | `unlock_private` | action | not read-only (it reaches the phone) | Sends the `mcp_unlock_request` push; returns no data. One push a minute and five an hour per AI client |
 
 The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions: what was published and when, and what is due or asked for. The instructions say that nothing in Leave says a program is open now. For an athlete under 18, and for a parent or guardian's connection, they also tell the AI to name no brand in the eight categories that are for athletes 18 and older (2026-10-05).
+
+Both write tools need the account's AI consent. Without it they answer `ai_consent_required` with one sentence: "Leave's AI is off on this account, so nothing was saved or sent to Google. It is turned on in the Leave app, under Profile › AI and Google." For an athlete of 13 to 17, or a parent or guardian's connection, the sentence says a parent or guardian turns it on from their own Leave app. A refused note saves nothing, embeds nothing and uses none of the day's 100. No note was added through an AI connection in production before this check existed.
 
 For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). A parent or guardian's own connection reads the guardian's own account, which holds none of the athlete's notes, contracts or threads, so it cannot reach the athlete's Web or private data. It is served as under 18 in both tools, so the eight categories are withheld there too (2026-10-05).
 
