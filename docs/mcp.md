@@ -139,9 +139,11 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 - **Unlock:** the app posts a grant (`POST /mcp/clients/{id}/grant`, `ttlSeconds` 900 or 3,600; 1 hour is the maximum). The grant lives in API memory only and is never persisted. A restart or scale-out simply means the next private read asks again.
 - **Locked read** (built; not yet walked end to end on a phone):
   1. The tool returns "Contract terms are locked for ChatGPT. They are unlocked in the Leave app, under Profile › Connections."
-  2. The server sends `mcp_unlock_request { type, clientId, clientName, provider }` as an alert with an **Unlock** action.
-  3. One tap and Face ID in the app post a new grant.
-  4. The athlete asks the AI again.
+  2. The server sends the phone an unlock request, at most one a minute and five an hour per AI app. Since 2026-10-06 its alert reads "{app} asked for your private data. Unlock for an hour?", naming the app only when it is one Leave knows by name, so an unknown client cannot put its own words on the lock screen.
+  3. The person unlocks in the Leave app with Face ID or the passcode. Notifications are not needed for this: the unlock can always be made from Profile › Connections.
+  4. Since 2026-10-06 the read that asked waits up to 20 seconds for the unlock and then answers. The wait holds no key and records nothing. If no unlock arrives, or it arrives on another server instance, the read answers "locked" and the next ask succeeds.
+- **A count the person can see.** The server keeps, per AI app, how many reads returned private data in the last 24 hours and when the last one was, for the Connections screen to show. A read answered "locked" is not counted.
+- **No day-long unlock.** An unlock is 15 minutes or 1 hour and lives in server memory only. A longer one would mean storing record keys on the server, which Leave does not do.
 - **Writes always work.** The server wraps the new key, and the share-wrap completes on the next app session.
 - Push `mcp_connected { type, clientId, clientName, provider }` refreshes Connections, and it doubles as a security alert: "Leave was connected to ChatGPT. Not you? Disconnect."
 
