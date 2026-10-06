@@ -79,6 +79,7 @@ Our MCP server:
 - Sessions sign out after 30 days idle.
 - The sign-in page carries Leave branding, with Terms and Privacy links.
 - Since 2026-10-05 the sign-in and sign-up pages carry this text beside the form (under it on a narrow screen): "Leave accounts are made in the Leave app. This page signs in an account you already have." It is the same for everyone, so it says nothing about any address. Only people connecting an AI app see this page; the Leave app signs people in on its own screens.
+- Since 2026-10-06 the page's "Sign up" link, and the hosted sign-up page itself, lead to `leaveyouragent.com/connect`, so no sign-up form is offered there. Sign-up in the Leave app is unchanged (checked the same minute: a new address still got its code). The sign-in form still sends a code to any address typed, which is why a sign-in with no Leave account gets the plain sentence in section 4 and is deleted after a day.
 - Sign-in code emails are sent from leaveyouragent.com, verified through SPF and two DKIM records at Cloudflare.
 - The metadata advertises S256 and token auth `none`, so checks 2 and 3 below pass. A test client with loopback redirects was accepted on any port, then deleted.
 - Access tokens last 5 minutes (the WorkOS default). This is stricter than the 1 hour first planned, because a Disconnect takes effect within 5 minutes. Kept.
