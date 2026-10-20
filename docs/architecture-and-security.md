@@ -280,7 +280,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 ### What we say to athletes, and what backs it up
 
 - **A public security page** describing this design in plain words: what is encrypted, who holds which key, what the server can and cannot read, which vendors see what, how to revoke. **The design documents are published alongside it** (this file, `api-contract.md` and `mcp.md`), so the page's claims can be checked against the actual architecture.
-- **Open-source client cryptography**: the iOS module that generates keys, wraps and unwraps data keys, and talks to the API is to be published, so the claim "the share never leaves the phone" can be checked.
+- **Open-source client cryptography**: the iPhone and Android code that generates keys, wraps and unwraps data keys, and talks to the API is published at https://github.com/LeaveYourAgent/leave-crypto (Apache-2.0, from 2026-10-20), so the claim "the share never leaves the phone" can be checked.
 - **An independent penetration test once Leave is funded**, then annually, with findings and fixes summarized on the security page. Until then the external checks are the disclosure policy and security.txt, the open-source client crypto module, and these public design documents. SOC 2 when a customer or investor asks.
 - **security.txt and a disclosure policy** on day one; a bug bounty once the first pen test is closed.
 - **A subprocessor list and a transparency report** (requests from governments or others, and Leave's answer) published twice a year.
@@ -450,7 +450,7 @@ Status markers: **done** means configured or live today; everything else is desi
 19. Walk the delete path: delete a contract, confirm the object, the explanation rows, the strand edges and the KMS-wrapped text are gone.
 20. Confirm Data Access logs show nothing from strands or transcripts.
 21. Alerts route to a phone, not just email.
-21a. Trust package live before the App Store listing (2026-10-19: everything here except the open-sourced client crypto module, which is not yet published): public security page, the public design documents in the leave-security repo, the open-sourced client crypto module, security.txt and the disclosure policy, the subprocessor list, and the 13+ age gate.
+21a. Trust package live before the App Store listing (2026-10-19: everything here except the open-sourced client crypto module, which was published on 2026-10-20 at https://github.com/LeaveYourAgent/leave-crypto): public security page, the public design documents in the leave-security repo, the open-sourced client crypto module, security.txt and the disclosure policy, the subprocessor list, and the 13+ age gate.
 22. Caps drill: replay a day of recorded traffic at 5× volume against the caps and confirm the per-account daily ceiling and the global usage alert both trigger; confirm an athlete at 100% of talks gets the soft stop and the Add credits link, and that a credit purchase on the web unlocks the next turn within a minute.
 23. Encryption drill: with a database dump, a bucket export, the KMS key, and a memory dump of a running API instance taken while no athlete session is active, confirm no private field decrypts. Then revoke a test athlete's key and confirm the API returns nothing readable for that account.
 

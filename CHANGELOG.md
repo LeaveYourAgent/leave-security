@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-20
+
+- The apps' client cryptography is published at https://github.com/LeaveYourAgent/leave-crypto under Apache-2.0: the iPhone and Android cores, the bridges that hold the key share, the shared test vectors, and a cross-check of the iPhone, Android and a test copy of the server code.
+
 ## 2026-10-19
 
 - Leave is on the App Store for iPhone; Android is in review with Google Play. The README's status is updated, and the security page (https://leaveyouragent.com/security) now marks what is live.
