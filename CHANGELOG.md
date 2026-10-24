@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-24
+
+An internal security review compared these documents with the code. Corrections:
+
+- Architecture: Firebase App Check is report-only today. The app sends an App Attest or Play Integrity token on every request and the server records failures; the document had said it was enforced.
+- Architecture: the status is as of 2026-10-24, with the iPhone app live and the Android app in review on Google Play, not yet in production. Two lines, how grants are stored for work that continues after a request and how deploy images are attested, are being reviewed and will be updated.
+- Architecture: Rotate and Revoke key are designed, not built. Delete account deletes the records and their keys without a separate Revoke step; the document had said it ran Revoke.
+- Architecture and MCP: Google's abuse-monitoring retention is up to 90 days, for flagged prompts only (the documents still said up to 30 days). The models in use are named: Gemini 4 Argon for Talk and contract reading; Gemini 3.8 Flash for the Web run, long Talk inputs and side-by-side reports. The documents had said every call ran on Gemini 3.8 Flash.
+- Architecture: the Teammate's new-sign-in notice and passkeys as a second factor are planned, not shipped. The CMEK key scope, the dependency controls and the test setup now match the code.
+- Architecture: inside the private network, the connection from Cloud Run to the graph database (Neo4j) is not yet TLS; that is being changed, and the document now says so.
+- MCP: since 2026-10-22, a connection turned on under the sheet that names strands, the private reason behind each thread and contract terms can read all three while unlocked, including the new `get_strands` tool. The document had said strands and reasons were not readable from an AI app.
+- MCP: what is filtered today is stated: hidden characters from everything, and instruction-like sentences from web text. Contract terms and a thread's reason are not yet labelled as quoted text for the AI; that is planned.
+- MCP: an unlock is held by the one server instance that received it; when more than one is running, a read can answer "locked" and ask the phone again.
+- iOS app: the status is as of 2026-10-24, with store build 72. Features in that build are marked Live, the permission list is complete (Face ID and notifications were missing), and Talk's saved conversations are kept on the phone.
+- iOS app: the client crypto package is listed as published at https://github.com/LeaveYourAgent/leave-crypto, recovery is listed as live, and Talk conversations are kept on the phone, encrypted, from build 72; Leave's servers don't keep them.
+
 ## 2026-10-20
 
 - The apps' client cryptography is published at https://github.com/LeaveYourAgent/leave-crypto under Apache-2.0: the iPhone and Android cores, the bridges that hold the key share, the shared test vectors, and a cross-check of the iPhone, Android and a test copy of the server code.

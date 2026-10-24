@@ -1,16 +1,14 @@
 # Leave in your AI chat: the MCP design
 
-Built and running; proven from one AI app. Status as of 2026-10-06.
+Built and running; proven from two AI apps. Status as of 2026-10-24.
 
 **What exists today**
 
-- **Running:** the MCP server at `https://mcp.leaveyouragent.com` (the discovery document, the token check and the eight tools in section 4), the sign-in at `auth.leaveyouragent.com`, and the page `leaveyouragent.com/connect`.
+- **Running:** the MCP server at `https://mcp.leaveyouragent.com` (the discovery document, the token check and the eight tools in section 4, and a ninth, `get_strands`, on connections that share all private data), the sign-in at `auth.leaveyouragent.com`, and the page `leaveyouragent.com/connect`.
 - **Proven with a real account:** two AI apps. Claude: a custom connector signed in with the emailed code, listed the tools and read the public profile (2026-09-29 and 2026-09-30). The OpenAI desktop app (it registers as "Codex"): signed in, listed the tools, read the profile and the Web threads and saved a strand, and the Leave app's Connections screen turned sharing on and unlocked against production for the first time (2026-10-06).
-- **Fixed 2026-10-06:** from 2026-10-04 01:12 UTC to 2026-10-06 15:32 UTC a sign-in code made by the hosted sign-in page was not emailed, so no AI app could complete a new sign-in. The code email had moved to Leave's own design and the hosted page was not considered. Since 15:43 UTC on 2026-10-06 Leave's server sends its own code email for a code the hosted page asks for, once; shown with a real code from the production page the same minute.
 - **Not yet proven:** a contract's terms read while unlocked; "Lock now"; Disconnect against WorkOS in production (tested against a stand-in); adding a contract from an AI app; ChatGPT on the web; Gemini, which has not reached the production server; every other app in section 2.
 - **Not submitted:** no directory or store listing has been submitted for any AI app.
-- **In testing:** the Connections screen in the iOS app. Nothing app-side is called live until the app is in the App Store.
-- **Accounts:** Leave is invite-only for now, so connecting needs an account that already exists.
+- **Accounts:** connecting needs a Leave account that already exists; accounts are made in the Leave app.
 
 This design builds on `architecture-and-security.md` (infrastructure and encryption) and `api-contract.md` (the routes and push payloads it refers to). It is a public document, so it contains no keys, IDs or internal hostnames.
 
@@ -25,7 +23,7 @@ An athlete adds Leave to the AI they already use (ChatGPT, Claude, Gemini and ot
 1. Tap **Add to ChatGPT / Claude / Gemini / …** in the app (Profile → Connections) or on **leaveyouragent.com/connect**.
 2. The AI opens a Leave sign-in page at `auth.leaveyouragent.com`. The athlete enters their email and types the 6-digit code; iOS offers the code from Mail. One more screen reads "ChatGPT will see your public record and public Web threads. It can add things you tell it to Leave. Your private notes and contracts stay locked." Then they tap **Allow**.
 3. That's it. Public data and writes work right away.
-4. **Optional:** to share contract terms, go to Profile › Connections in the Leave app, then **Share private data** for that AI app. That shows the provider's retention notice and asks for Face ID, and it starts unlocked for 15 minutes (1 hour can be chosen). Athletes aged 13 to 17 don't get this option (section 5). **Lock now** ends it at any time. Today an unlock opens contract terms only: strands and the private reason behind a thread are not readable from an AI app.
+4. **Optional:** to share contract terms, go to Profile › Connections in the Leave app, then **Share private data** for that AI app. That shows the provider's retention notice and asks for Face ID, and it starts unlocked for 15 minutes (1 hour can be chosen). Athletes aged 13 to 17 don't get this option (section 5). **Lock now** ends it at any time. What an unlock opens depends on the sheet the athlete accepted: contract terms only (connections made before 2026-10-22, or where the athlete chose that), or contract terms, strands and the private reason behind each thread (the full sheet, since 2026-10-22).
 
 **Why the private step is not part of the connect flow:** a universal link on `auth.leaveyouragent.com` would let the installed Leave app take over the OAuth page in the middle of sign-in. ChatGPT and Claude run sign-in in a system auth sheet, which can be dismissed while the athlete is away in another app. The result is a broken connect flow. Connecting therefore stays entirely on the web and is public only, and private access is switched on later inside the app. This is simpler for the athlete, more reliable, and just as strict, because private data still needs the share on the phone.
 
@@ -113,35 +111,38 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 | `get_public_signals` | read | readOnly, openWorld | Public opportunities near you: casting calls, brand posts, sponsor programs, press. Each carries the day its page was published (or none), whether it is a standing program, and the day the crawl last found it. Only signals inside the age limit of `api-contract.md` are listed, and nothing says a program is open now |
 | `list_contracts` | read | readOnly | Brand, status and dates only |
 | `get_contract` | read | readOnly | Terms and flagged clauses of one contract. Works only while contract terms are unlocked for that AI app |
-| `get_web_threads` | read | readOnly, openWorld | Each thread's public title and link. A thread's private reason and the person's strands are not readable from an AI app, so this tool returns the same thing locked or unlocked (2026-10-06) |
-| `add_strand` (named `add_note` until 2026-10-06) | write | not destructive | Saves something the athlete tells the AI as an encrypted private strand and creates one embedding with Google's embedding model; 100 in 24 hours at most. Needs Leave's AI to be on for the account. A saved strand is read in the Leave app |
-| `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 3.8 Flash extraction) under the same plan, consent, page and storage checks as an upload from the app |
-| `unlock_private` | action | not read-only (it reaches the phone) | Asks the phone to unlock contract terms; returns no data. One push a minute and five an hour per AI client |
+| `get_web_threads` | read | readOnly, openWorld | Each thread's public title and link. On a connection whose switch was turned on under the sheet that names strands, a thread's private reason and contract terms, and while it is unlocked, each thread also carries its private reason and the strand it came from (since 2026-10-22). Locked, or under the older contract-terms-only switch, the public parts only. A live (on-demand) thread is never returned |
+| `get_strands` | read | readOnly | Registered only on connections that share all private data (never under 18 or for a parent or guardian). While unlocked, the athlete's strands whose keys the phone sent, newest first, up to 50. Locked, it asks the phone for an unlock, waits up to 20 seconds, then answers with the one-sentence locked message (since 2026-10-22) |
+| `add_strand` (named `add_note` until 2026-10-06) | write | not destructive | Saves something the athlete tells the AI as an encrypted private strand and creates one embedding with Google's embedding model; 100 in 24 hours at most. Needs Leave's AI to be on for the account. A saved strand is read in the Leave app, and from an AI app only through `get_strands` where shared and unlocked |
+| `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 4 Argon reads the contract) under the same plan, consent, page and storage checks as an upload from the app |
+| `unlock_private` | action | not read-only (it reaches the phone) | Asks the phone to unlock contract terms, or private data on a connection that shares all of it; returns no data. One push a minute and five an hour per AI client |
+
+Text that other people wrote reaches the AI app through these tools: a contract's terms were written by the other party, and a thread's reason was written by Leave's model from public web pages. Leave strips hidden characters from everything it returns and, for web text, instruction-like sentences too. Contract terms and a thread's reason are not yet labelled as quoted text for the AI; that change is planned. An AI app that holds both web content and private data can still be steered by that content; that limit is the AI app's, and the athlete chooses what to share.
 
 The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions: what was published and when, and what is due or asked for. The instructions say that nothing in Leave says a program is open now. For an athlete under 18, and for a parent or guardian's connection, they also tell the AI to name no brand in the eight categories that are for athletes 18 and older (2026-10-05).
 
 Both write tools need the account's AI consent. Without it they answer `ai_consent_required` with one sentence: "Leave's AI is off on this account, so nothing was saved or sent to Google. It is turned on in the Leave app, under Profile › AI and Google." For an athlete of 13 to 17, or a parent or guardian's connection, the sentence says a parent or guardian turns it on from their own Leave app. A refused strand saves nothing, embeds nothing and uses none of the day's 100. No strand was added through an AI connection in production before this check existed.
 
-For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). A parent or guardian's own connection reads the guardian's own account, which holds none of the athlete's notes, contracts or threads, so it cannot reach the athlete's Web or private data. It is served as under 18 in both tools, so the eight categories are withheld there too (2026-10-05).
+For an athlete under 18, `get_public_signals` and `get_web_threads` leave out everything in the eight brand categories that are for athletes 18 and older, and anything not yet checked. (2026-10-04). A parent or guardian's own connection reads the guardian's own account, which holds none of the athlete's strands, contracts or threads, so it cannot reach the athlete's Web or private data. It is served as under 18 in both tools, so the eight categories are withheld there too (2026-10-05).
 
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
 
 **Prompt-injection hygiene:**
-- Web threads come from public posts, so they are untrusted. They go out as plain data fields, with markup and instruction-like text stripped.
+- Web threads come from public posts, so they are untrusted. They go out as plain data fields. A thread's title has markup and instruction-like text stripped; a thread's private reason is not yet filtered that way, and that change is planned.
 - Every input is validated on the server.
 - Logs never contain private content.
 
 ## 5. Private data and the unlock
 
 - **The default is public only.** Private access is off for each client until the athlete turns it on in the app with Face ID (device-signed `PUT /mcp/clients/{id}/scopes`).
-- **What an unlock opens today: contract terms only** (stated in everything the AI is given since 2026-10-06). Until then the connector's wording said "private data" and "private notes", and the app's unlock had only ever carried contract keys, so strands and a thread's private reason were never readable. An AI app that connects from the same company under a second client (ChatGPT and Codex, for example) is a separate row with its own switch and its own unlock.
-- **Nobody can use this yet. It is a design, approved and built on the server, that does nothing until the Leave app can show its sheet:** a person who turns on "Share private data" under a sheet that names each kind (their strands, the private reason behind each thread, their contract terms) can have all three read while unlocked. The switch remembers which sheet it was turned on under, and the server refuses an unlock that carries strand or thread keys for a switch turned on under the older sheet.
+- **What an unlock opens depends on the sheet the athlete accepted:** contract terms only (connections made before 2026-10-22, or where the athlete chose that), or contract terms, strands and the private reason behind each thread (the full sheet, since 2026-10-22). The AI app is told which in the server's instructions and in the descriptions of `get_contract`, `get_web_threads`, `add_strand` and `unlock_private`. Until 2026-10-06 the connector's wording said "private data" and "private notes", and the app's unlock had only ever carried contract keys, so strands and a thread's private reason were not readable then. An AI app that connects from the same company under a second client (ChatGPT and Codex, for example) is a separate row with its own switch and its own unlock.
+- **The full sheet, in the Leave app since 2026-10-22:** a person who turns on "Share private data" under a sheet that names each kind (their strands, the private reason behind each thread, their contract terms) can have all three read while unlocked. The switch remembers which sheet it was turned on under, and the server refuses an unlock that carries strand or thread keys for a switch turned on under the older sheet.
 - **Unlock:** the app posts a grant (`POST /mcp/clients/{id}/grant`, `ttlSeconds` 900 or 3,600; 1 hour is the maximum). The grant lives in API memory only and is never persisted. A restart or scale-out simply means the next private read asks again.
 - **Locked read** (built; not yet walked end to end on a phone):
   1. The tool returns "Contract terms are locked for ChatGPT. They are unlocked in the Leave app, under Profile › Connections."
   2. The server sends the phone an unlock request, at most one a minute and five an hour per AI app. Since 2026-10-06 its alert reads "{app} asked for your private data. Unlock for an hour?", naming the app only when it is one Leave knows by name, so an unknown client cannot put its own words on the lock screen.
   3. The person unlocks in the Leave app with Face ID or the passcode. Notifications are not needed for this: the unlock can always be made from Profile › Connections.
-  4. Since 2026-10-06 the read that asked waits up to 20 seconds for the unlock and then answers. The wait holds no key and records nothing. If no unlock arrives, or it arrives on another server instance, the read answers "locked" and the next ask succeeds.
+  4. Since 2026-10-06 the read that asked waits up to 20 seconds for the unlock and then answers. The wait holds no key and records nothing. If no unlock arrives, the read answers "locked". An unlock is held in the memory of the one server instance that received it. Leave usually runs one instance; when more are running, a read that reaches another instance answers "locked" and asks the phone again. Nothing is exposed by this; it can mean unlocking twice.
 - **A count the person can see.** The server keeps, per AI app, how many reads returned private data in the last 24 hours and when the last one was, for the Connections screen to show. A read answered "locked" is not counted.
 - **No day-long unlock.** An unlock is 15 minutes or 1 hour and lives in server memory only. A longer one would mean storing record keys on the server, which Leave does not do.
 - **Writes always work.** The server wraps the new key, and the share-wrap completes on the next app session.
@@ -158,7 +159,7 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 - **Gemini:** "Gemini stores chats in your Google activity (on by default for 18 months), and human reviewers may read them."
 - **Other:** "This AI keeps what you share under its own privacy policy, which Leave can't control."
 
-These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Gemini 3.8 Flash on Vertex AI, where Google may retain prompts up to 30 days solely for abuse monitoring, as described in `architecture-and-security.md`.
+These notices are about the AI app's own retention. Leave's own model calls (for `add_contract`) run on Gemini 4 Argon on Vertex AI, where Google may keep prompts its automated checks flag for up to 90 days solely for abuse monitoring, as described in `architecture-and-security.md`.
 
 ## 7. Build order, and where each step stands
 
@@ -182,6 +183,10 @@ These notices are about the AI app's own retention. Leave's own model calls (for
 7. (2026-10-04) The eight brand categories that are for athletes 18 and older are withheld from an athlete under 18 in AI connections too.
 8. (2026-10-05) The thing a person saves has one name, a strand, in the connector as in the app.
 9. (2026-10-06) One switch per AI app covers all private data, and what it covers is named on the sheet before it goes on.
+
+## History
+
+- **Fixed 2026-10-06:** from 2026-10-04 01:12 UTC to 2026-10-06 15:32 UTC a sign-in code made by the hosted sign-in page was not emailed, so no AI app could complete a new sign-in. The code email had moved to Leave's own design and the hosted page was not considered. Since 15:43 UTC on 2026-10-06 Leave's server sends its own code email for a code the hosted page asks for, once; shown with a real code from the production page the same minute.
 
 ## Sources
 
