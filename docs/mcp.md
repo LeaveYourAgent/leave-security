@@ -1,6 +1,6 @@
 # Leave in your AI chat: the MCP design
 
-Built and running from several AI apps. Status as of 2026-10-24.
+Built and running; proven from two AI apps. Status as of 2026-10-24.
 
 **What exists today**
 

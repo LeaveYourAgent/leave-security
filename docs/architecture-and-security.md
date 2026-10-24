@@ -2,7 +2,7 @@
 
 Live on the App Store since 2026-10-19; the Android app is in review on Google Play, not yet in production. Status as of 2026-10-24.
 
-**Note, 2026-10-24:** two lines in this document are being reviewed and will be updated: how grants are stored for work that continues after a request (section 2c), and how deploy images are attested (section 2d, finding 3).
+**Note, 2026-10-24:** this document was corrected against what is live on 2026-10-24; the changelog lists each change.
 
 **What exists today**
 
@@ -25,7 +25,7 @@ Written 2026-09-22, security review 2026-09-23. One environment (production) for
 | Contracts | Upload PDF/DOC/DOCX/JPG/PNG/HEIC up to 25 MB / 60 pages from camera, Files, cloud pickers, or the AI chat; "Done in 41 seconds"; six-part explanation; brand colors + logo | The phone extracts the text first; Cloud Storage for the encrypted original, Cloud Tasks queue + Cloud Run worker (LibreOffice + HEIC conversion in the container), Document AI Layout Parser only for scans the phone cannot read (the athlete is told), Gemini 4 Argon on Vertex AI with structured output to extract the six parts and flagged clauses, embeddings into pgvector, nodes and edges into Neo4j, brand colors and logo from Leave's own brands table |
 | Files | 1 GB per athlete, contracts shared with the Teammate, everything else athlete-only, delete removes derived data; cloud imports (Drive, OneDrive, Dropbox) run on the phone | Cloud Storage with per-object metadata + signed URLs, Postgres ACL rows, KMS envelope keys |
 | Brand logos and colors | Every contract shows in its brand's colors with the brand's logo; brands are Leave's own table, maintained in-house | A `brands` table (keyed by brand only, never an athlete), a separate `brands` service that fetches public brand marks from the brand's own site (isolated from every key and from contract data), a private logo bucket served through a CDN at cdn.leaveyouragent.com, a task queue and a monthly refresh |
-| The Leave Web | Private strands + public record + public signals (brand posts, casting calls, press, deal announcements, sponsor programs, own contracts); each thread = strand + signal + potential move; blocked-by-exclusivity edges with re-open dates | Neo4j knowledge graph (athletes, strands, signals, contracts, clauses, brands, markets and the edges between them), pgvector embeddings for candidate matching, Cloud Scheduler + Cloud Run Jobs for the signal crawlers, Grounding with Google Search for discovery, Gemini 3.8 Flash for connection generation, FCM push for "new connection" |
+| The Leave Web | Private strands + public record + public signals (brand posts, casting calls, press, deal announcements, sponsor programs, own contracts); each thread = strand + signal + potential move; blocked-by-exclusivity edges with re-open dates | Neo4j knowledge graph (athletes, strands, signals, contracts, clauses, brands, markets and the edges between them), pgvector embeddings for candidate matching, Cloud Scheduler + Cloud Run Jobs for the signal crawlers, Grounding with Google Search in the on-demand Web run, Gemini 3.8 Flash for connection generation, FCM push for "new connection" |
 | Profile | Public record from the talent database, private card, Teammate, Plan (Stripe portal), Export data, Connections (MCP clients) | Cloud SQL `talent` table holding records only for athletes who have signed up (the public record is looked up at sign-up; no profile is ever pre-built for someone who is not a user), Stripe Billing + webhooks, export job writing to Cloud Storage, MCP client table |
 | Learn series, Up Next, Accessibility | Static content, reminders, settings | App bundle + Postgres; Cloud Scheduler for payment/deliverable reminders |
 | Analytics events | tour_started, tour_step_viewed, etc., never attached to private data | First-party events table in Postgres, pseudonymous, exported to BigQuery in Leave's own project (Firebase Analytics dropped in the security review) |
@@ -268,7 +268,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 
 ### Medium
 
-**9. Vendors learned about athletes through side channels.** A brand-data vendor would have learned which brands an athlete has contracts with; crawler web searches could carry athlete specifics. Fix: brand colors and logos come from Leave's own brands table (decided 2026-09-25; no vendor), and crawler queries are by market and sport, never by athlete; Grounding with Google Search runs in the crawler only, with no athlete data in the prompt.
+**9. Vendors learned about athletes through side channels.** A brand-data vendor would have learned which brands an athlete has contracts with; crawler web searches could carry athlete specifics. Fix: brand colors and logos come from Leave's own brands table (decided 2026-09-25; no vendor), and crawler queries are by market and sport, never by athlete; Grounding with Google Search runs only in the on-demand Web run, whose search topics are checked to hold no name, school or team; the nightly crawler's grounded search has been paused since 2026-10-19 and it now reads no outside site.
 
 **10. Firebase Analytics sent behavioral events to Google Analytics.** Fix: **drop Firebase Analytics.** The tour and feature events the design lists go to a first-party events table (the same pipeline as `usage_events`), pseudonymous, exported to BigQuery in Leave's own project. Firebase stays for push and App Check. Crash reports go to Leave's own API, not to Crashlytics: a report is numbers and values from fixed lists (where in the code an error happened, the build, the OS version, the device model) and has no field that can hold text, so no strand, contract or email text can reach one.
 
@@ -348,7 +348,7 @@ iPhone app ──┐                                   ChatGPT / Claude / Gemini
              │                                  (Document AI only for unreadable scans) → Gemini structured  
              │                                  output → Postgres/pgvector → Neo4j → brands table
              ├──► Secret Manager, Cloud KMS
-             ├──► Vertex AI: Gemini 4 Argon and Gemini 3.8 Flash (global endpoint; Google search grounding for the crawler) and gemini-embedding-001
+             ├──► Vertex AI: Gemini 4 Argon and Gemini 3.8 Flash (global endpoint; Google Search grounding for the on-demand Web run only) and gemini-embedding-001
              ├──► Document AI Layout Parser (us)
              ├──► Neo4j Community on a Confidential VM in the VPC (private IP only)
              ├──► Speech-to-Text (opt-in fallback) / Text-to-Speech (Chirp 3)

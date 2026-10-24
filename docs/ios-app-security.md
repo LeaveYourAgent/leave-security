@@ -272,7 +272,7 @@ checked against the same values.
 ## 6. Security review
 
 An internal review on 2026-09-23 against OWASP MASVS v2 found no critical issues. Its
-"fix now" items are the In-testing rows above. Deferred to the first connected build:
+"fix now" items have since shipped and are marked Live above. Deferred to the first connected build:
 real sign-in verification with attempt limits, the collected-data privacy manifest,
 certificate pinning (done in build 21), App Attest and proportionate jailbreak awareness.
 
