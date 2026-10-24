@@ -91,7 +91,7 @@ Domains: DNS and the marketing site stay at Cloudflare. DNS-only (grey cloud) re
 ### Security baseline
 
 - Cloud Audit Logs: Admin Activity is on by default; Data Access logs are also enabled for Cloud SQL, Cloud Storage and Secret Manager in the production project (who opened which contract is something Leave may be asked for).
-- Security Command Center Standard tier at the org level.
+- Security Command Center Standard tier at the org level (active since 2026-10-24).
 - Secret Manager for every third-party key (WorkOS API key and client secret, Resend, Stripe). The Apple push key is uploaded to the Firebase project, where Firebase Cloud Messaging uses it; the services send push as their own service accounts, so no workload holds it. Gemini runs through Vertex AI with the service account's own identity, so there is no model API key to store. Cloud Run mounts secrets; nothing lives in env files.
 - Cloud KMS: one key ring with an HSM key that wraps every per-record data key together with the athlete's own key share, so "not Leave staff" in the private card is true in the cryptography. Section 2c has the full design.
 - Logging exclusions so request bodies, transcripts and strand text never land in Cloud Logging (the design promises "never logged").
