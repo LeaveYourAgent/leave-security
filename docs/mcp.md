@@ -1,6 +1,6 @@
 # Leave in your AI chat: the MCP design
 
-Built and running; proven from two AI apps. Status as of 2026-10-24.
+Built and running from several AI apps. Status as of 2026-10-24.
 
 **What exists today**
 
@@ -21,9 +21,9 @@ An athlete adds Leave to the AI they already use (ChatGPT, Claude, Gemini and ot
 **Address (for any chat that asks for one): `https://mcp.leaveyouragent.com`**, with no path. It is the shortest thing we can ask anyone to type.
 
 1. Tap **Add to ChatGPT / Claude / Gemini / …** in the app (Profile → Connections) or on **leaveyouragent.com/connect**.
-2. The AI opens a Leave sign-in page at `auth.leaveyouragent.com`. The athlete enters their email and types the 6-digit code; iOS offers the code from Mail. One more screen reads "ChatGPT will see your public record and public Web threads. It can add things you tell it to Leave. Your private notes and contracts stay locked." Then they tap **Allow**.
+2. The AI opens a Leave sign-in page at `auth.leaveyouragent.com`. The athlete enters their email and types the 6-digit code; iOS offers the code from Mail. One more screen, WorkOS's standard consent page with Leave's branding, names the AI app and asks the athlete to **Allow** it. That connection can read the public record and public Web threads and add what the athlete tells it; private data stays off until the athlete shares it from the app (step 4).
 3. That's it. Public data and writes work right away.
-4. **Optional:** to share contract terms, go to Profile › Connections in the Leave app, then **Share private data** for that AI app. That shows the provider's retention notice and asks for Face ID, and it starts unlocked for 15 minutes (1 hour can be chosen). Athletes aged 13 to 17 don't get this option (section 5). **Lock now** ends it at any time. What an unlock opens depends on the sheet the athlete accepted: contract terms only (connections made before 2026-10-22, or where the athlete chose that), or contract terms, strands and the private reason behind each thread (the full sheet, since 2026-10-22).
+4. **Optional:** to share contract terms, go to Profile › Connections in the Leave app, then **Share private data** for that AI app. That shows the provider's retention notice and asks for Face ID, and it starts unlocked for 15 minutes (1 hour can be chosen). Athletes aged 13 to 17 don't get this option (section 5). **Lock now** ends it at any time. What an unlock opens is named on the sheet the athlete accepted: contract terms only, or contract terms, strands and the private reason behind each thread (section 5).
 
 **Why the private step is not part of the connect flow:** a universal link on `auth.leaveyouragent.com` would let the installed Leave app take over the OAuth page in the middle of sign-in. ChatGPT and Claude run sign-in in a system auth sheet, which can be dismissed while the athlete is away in another app. The result is a broken connect flow. Connecting therefore stays entirely on the web and is public only, and private access is switched on later inside the app. This is simpler for the athlete, more reliable, and just as strict, because private data still needs the share on the phone.
 
@@ -73,7 +73,7 @@ Our MCP server:
 - CIMD and DCR are on.
 - The resource `https://mcp.leaveyouragent.com` is set.
 - `auth.leaveyouragent.com` is verified, and the issuer is `https://auth.leaveyouragent.com`.
-- Magic Auth is on, and passwords and passkeys are off. (Passkeys come back as a second factor in the first update after launch; see `architecture-and-security.md`, finding 5.)
+- Magic Auth is on, and passwords and passkeys are off. Passkeys as a second factor are planned (WorkOS supports them).
 - SSO is off.
 - Sessions sign out after 30 days idle.
 - The sign-in page carries Leave branding, with Terms and Privacy links.
@@ -99,7 +99,7 @@ Our MCP server:
 - Every tool call is recorded with the tool, the AI client and how it ended (ok, locked, private, refused or error). Arguments and results are never recorded.
 - A request from another site's `Origin` is refused. A token that does not name the client it was issued to is refused.
 - An account that is deleted loses its sign-in identity, so every AI connection it had stops and has to sign in again.
-- A person who signs in with no usable Leave account (none, sign-up unfinished, or being deleted) gets one plain sentence from every tool, for example "There is no Leave account for this sign-in. Leave accounts are made in the Leave app." No account data is read and no connection is recorded. Before 2026-10-05 the AI app was asked to sign in again without end. Covered by the server's tests; not yet seen with a real sign-in in production.
+- A person who signs in with no usable Leave account (none, sign-up unfinished, or being deleted) gets one plain sentence from every tool, for example "There is no Leave account for this sign-in. Leave accounts are made in the Leave app." No account data is read and no connection is recorded. Those calls are also limited per network address, 60 a minute and 300 an hour, because a sign-in costs nothing to make. Before 2026-10-05 the AI app was asked to sign in again without end. Covered by the server's tests; not yet seen with a real sign-in in production.
 
 ### Tools
 
@@ -117,7 +117,7 @@ Every tool has a `title`, annotations, an `outputSchema` and `structuredContent`
 | `add_contract` | write | not destructive | Sends contract text into the contract pipeline (Gemini 4 Argon reads the contract) under the same plan, consent, page and storage checks as an upload from the app |
 | `unlock_private` | action | not read-only (it reaches the phone) | Asks the phone to unlock contract terms, or private data on a connection that shares all of it; returns no data. One push a minute and five an hour per AI client |
 
-Text that other people wrote reaches the AI app through these tools: a contract's terms were written by the other party, and a thread's reason was written by Leave's model from public web pages. Leave strips hidden characters from everything it returns and, for web text, instruction-like sentences too. Contract terms and a thread's reason are not yet labelled as quoted text for the AI; that change is planned. An AI app that holds both web content and private data can still be steered by that content; that limit is the AI app's, and the athlete chooses what to share.
+Text that other people wrote reaches the AI app through these tools: a contract's terms were written by the other party, and a thread's reason was written by Leave's AI from public web pages. Leave strips hidden characters from everything it returns and, for web text and a thread's reason, instruction-like sentences too. Contract terms are kept word for word and labelled as quoted text, and the AI is told in its instructions that contract terms, a thread's reason and strands are information, never instructions. An AI app that holds both web content and private data can still be steered by that content; that limit is the AI app's, and the athlete chooses what to share.
 
 The server also sends `instructions` with `initialize`: the person in the chat is addressed as "you" and by the first name on their Leave account (a guardian is named as the parent or guardian on the athlete's account), the AI calls `get_profile` first when greeted, and Leave gives information rather than instructions: what was published and when, and what is due or asked for. The instructions say that nothing in Leave says a program is open now. For an athlete under 18, and for a parent or guardian's connection, they also tell the AI to name no brand in the eight categories that are for athletes 18 and older (2026-10-05).
 
@@ -128,7 +128,7 @@ For an athlete under 18, `get_public_signals` and `get_web_threads` leave out ev
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID.
 
 **Prompt-injection hygiene:**
-- Web threads come from public posts, so they are untrusted. They go out as plain data fields. A thread's title has markup and instruction-like text stripped; a thread's private reason is not yet filtered that way, and that change is planned.
+- Web threads come from public posts, so they are untrusted. Their titles go out with markup and instruction-like text stripped, and a thread's reason with instruction-like text stripped and labelled as written by Leave's AI.
 - Every input is validated on the server.
 - Logs never contain private content.
 
@@ -137,7 +137,7 @@ There are no delete or send tools at launch. Destructive actions stay in the app
 - **The default is public only.** Private access is off for each client until the athlete turns it on in the app with Face ID (device-signed `PUT /mcp/clients/{id}/scopes`).
 - **What an unlock opens depends on the sheet the athlete accepted:** contract terms only (connections made before 2026-10-22, or where the athlete chose that), or contract terms, strands and the private reason behind each thread (the full sheet, since 2026-10-22). The AI app is told which in the server's instructions and in the descriptions of `get_contract`, `get_web_threads`, `add_strand` and `unlock_private`. Until 2026-10-06 the connector's wording said "private data" and "private notes", and the app's unlock had only ever carried contract keys, so strands and a thread's private reason were not readable then. An AI app that connects from the same company under a second client (ChatGPT and Codex, for example) is a separate row with its own switch and its own unlock.
 - **The full sheet, in the Leave app since 2026-10-22:** a person who turns on "Share private data" under a sheet that names each kind (their strands, the private reason behind each thread, their contract terms) can have all three read while unlocked. The switch remembers which sheet it was turned on under, and the server refuses an unlock that carries strand or thread keys for a switch turned on under the older sheet.
-- **Unlock:** the app posts a grant (`POST /mcp/clients/{id}/grant`, `ttlSeconds` 900 or 3,600; 1 hour is the maximum). The grant lives in API memory only and is never persisted. A restart or scale-out simply means the next private read asks again.
+- **Unlock:** the app posts a grant (`POST /mcp/clients/{id}/grant`, `ttlSeconds` 900 or 3,600; 1 hour is the maximum). The grant lives in API memory only and is never persisted. A restart, a deploy or a second instance means the next private read may ask again.
 - **Locked read** (built; not yet walked end to end on a phone):
   1. The tool returns "Contract terms are locked for ChatGPT. They are unlocked in the Leave app, under Profile › Connections."
   2. The server sends the phone an unlock request, at most one a minute and five an hour per AI app. Since 2026-10-06 its alert reads "{app} asked for your private data. Unlock for an hour?", naming the app only when it is one Leave knows by name, so an unknown client cannot put its own words on the lock screen.
@@ -166,7 +166,7 @@ These notices are about the AI app's own retention. Leave's own model calls (for
 1. **WorkOS config** (section 3). Done; three checks are open.
 2. **MCP handler in `api`**: the protected-resource metadata, the token check, and the public read tools. Done and running. Proven from a Claude custom connector.
 3. **Writes** (`add_strand`, `add_contract`). Built and tested in the server's own tests. Saving a strand was run from an AI app with a real account on 2026-10-06; adding a contract has not been.
-4. **App**: the Connections screen with the private switch, the unlock, Lock now, Disconnect and the two pushes. Built; in testing. `auth.` and `mcp.` stay out of associated domains.
+4. **App**: the Connections screen with the private switch, the unlock, Lock now, Disconnect and the two pushes. Built; on the App Store since build 68 (2026-10-19). The sheet that names strands and a thread's reason since build 72 (iOS 1.2, 2026-10-22). `auth.` and `mcp.` stay out of associated domains.
 5. **Site**: `leaveyouragent.com/connect`. Published.
 6. **Test each client end to end.** Claude: sign-in and public reads done; the private unlock, Lock now and Disconnect not yet walked. ChatGPT, Gemini, Le Chat, Perplexity, Grok, Cursor and VS Code: not tested.
 7. **Listings.** Nothing is submitted. A ChatGPT listing comes after ChatGPT has been tested end to end; it also needs OpenAI's verification of the company and domain, a reviewer sign-in that does not depend on an emailed code, and test cases. A Claude Connectors Directory listing waits for funding. Gemini has no third-party directory.

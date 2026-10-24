@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-24, further corrections
+
+More lines checked against the code and the live configuration the same day:
+
+- Architecture: section 2c describes how a still-sealed grant travels with work that continues after a request (reading a contract, a Web run, Talk's hand-off to a tool), including the Talk table row that lives at most 60 seconds.
+- Architecture: deploy images carry a Binary Authorization attestation signed with cosign using a Cloud KMS key by the GitHub Actions deploy workflow, through Workload Identity Federation with no stored key. The document had said Sigstore keyless signing with SLSA provenance.
+- Architecture: Grounding with Google Search is used only in an athlete's on-demand Web run; the crawler's nightly grounded crawl is paused since 2026-10-19. The model settings are named (`LEAVE_MODEL`, `LEAVE_MODEL_ROUTES`).
+- MCP: the consent step is WorkOS's standard consent page with Leave's branding, naming the AI app; the sentence the document quoted was from the design and was never shown. Passkeys as a second factor are planned. A restart, a deploy or a second instance can mean the next private read asks again. The Connections screen is on the App Store since build 68 (2026-10-19), and the sheet that names strands and a thread's reason since build 72 (2026-10-22).
+- MCP: a thread's reason now has instruction-like sentences stripped, as web text does, and is labelled as written by Leave's AI; contract terms are kept word for word and labelled as quoted text; the server's instructions tell the AI that contract terms, a thread's reason and strands are information, never instructions. Calls from a sign-in with no usable Leave account are limited per network address, 60 a minute and 300 an hour.
+- iOS app: sign-up, identity, the crypto module, the unlock notification, Add to Leave, attestation, universal links, push and crash reporting are marked Live for build 72 (identity since build 68). Plan and usage describes in-app purchase through Apple beside the website's Stripe checkout in the US App Store. The list of actions confirmed with Face ID or the passcode is complete. Key rotation and revocation are marked planned, in the crypto module's API too. The recorded Terms version is 2026-10-05.
+
 ## 2026-10-24
 
 An internal security review compared these documents with the code. Corrections:

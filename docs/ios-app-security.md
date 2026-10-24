@@ -70,7 +70,7 @@ our hosting provider, or by a vendor outside a session the athlete started.
   set of record IDs whose keys were handed over, the expiry, and a `renew()` that
   re-hands the same keys. Every private-data call goes through it.
 
-## 1. Identity: emailed code, designed screens kept (In testing)
+## 1. Identity: emailed code, designed screens kept (Live since build 68)
 
 Sign-in is an emailed six-digit code through WorkOS Magic Auth. The app keeps its own
 Email and Code screens and calls two Leave routes instead of a hosted sign-in page:
@@ -88,7 +88,7 @@ second factor are planned.
 data until a device that already holds the share approves it, or the athlete enters
 the recovery code. Every new sign-in notifies every device (the Teammate notice is planned).
 
-## 2. The crypto module (In testing; design is final)
+## 2. The crypto module (Live, build 72; key rotation and revocation planned)
 
 What it stores and where:
 
@@ -135,8 +135,8 @@ unwrapPending(accountWrappedDek, recordID) -> dataKey (HPKE open with the accoun
 wrapForAccount(dataKey, accountPub, recordID) -> HPKE blob (DHKEM P-256, HKDF-SHA256, AES-256-GCM, info "leave:v1:xwrap:<recordID>"); used for the Teammate
 wrapShareForDevice(share, devicePub, approvalRequestID) -> HPKE blob (info "leave:v1:device-approve:<approvalRequestID>")
 signConfirmation(action, targetID, timestamp) -> Secure Enclave signature for the confirmation header
-rotateShare(progress)          -> new share; re-wraps every share-wrapped key the server lists, uploads the new blobs, then swaps the share
-revokeShare()                  -> deletes the share locally and from iCloud Keychain (the server holds it disabled for 24 hours for undo)
+rotateShare(progress)          -> (planned) new share; re-wraps every share-wrapped key the server lists, uploads the new blobs, then swaps the share
+revokeShare()                  -> (planned) deletes the share locally and from iCloud Keychain (the server holds it disabled for 24 hours for undo)
 makeRecoveryCode()             -> 28-character Crockford base32 code shown once; returns the Argon2id-encrypted share blob for the server
 restoreFromRecoveryCode(code, blob) -> share
 ```
@@ -153,9 +153,12 @@ string and an empty HPKE AAD. Signatures are P-256 ECDSA, raw `r ‖ s` or DER.
 Record types for AAD: strand, contract, contractField, file, embedding, thread, pitch,
 receipt, export.
 
-Every destructive action (rotate, revoke, Teammate change, export, delete) first
-evaluates the Secure Enclave key with the system biometric prompt, so Face ID on a
-device that already holds the share is enforced in code, not only in the interface.
+Every destructive action (export, account deletion and its cancel, removing a device,
+inviting or removing a Teammate, a guardian's invite, withdrawal and athlete deletion,
+giving or withdrawing consent, and turning on private sharing for an AI app) first
+evaluates the Secure Enclave key with the system biometric prompt (Face ID or the
+passcode). Rotate and revoke are planned. When the phone is not approved, an emailed
+code confirms account deletion.
 
 Argon2id parameters: memory 64 MiB, 3 iterations, parallelism 1, 16-byte salt,
 32-byte output. Recovery blob: `0x01 ‖ salt(16) ‖ nonce(12) ‖ AES-256-GCM(share) ‖
@@ -169,14 +172,16 @@ checked against the same values.
 
 ## 3. Screens that change or appear
 
-1. **Sign-up.** In testing: who the account is for, names and the athlete's date of
-   birth as a neutral age gate (under 13 is refused with a plain explanation; 13 to 17
-   requires a parent or legal guardian, who becomes the required Talent Teammate;
+1. **Sign-up.** Live (build 72): who the account is for, names and the athlete's date
+   of birth as a neutral age gate (under 13 is refused with a plain explanation; 13 to
+   17 requires a parent or legal guardian, who becomes the required Talent Teammate;
    18 and over holds the account), then a clickwrap agreement with an unchecked box and
-   the linked Terms and Privacy Policy, with the accepted version recorded. Planned: a
-   third-parties panel naming every vendor and what it sees, then a Your key step that
-   creates the identity, shows the recovery code once, and explains that losing every
-   device and the code loses the private data.
+   the linked Terms and Privacy Policy, with the accepted version recorded, then the
+   plan gate. The key is created on the phone at sign-in with no step of its own. A
+   recovery code is made later under Profile › Recovery code, and Home mentions it
+   once. The AI consent sheet names Google's Gemini and Document AI and what each
+   feature sends, and asks before anything is sent. Planned: a panel naming every
+   vendor.
 2. **Approve this device.** Live (build 72). After a code is verified on an unknown device: a
    short device code, "open Leave on a phone you already use and approve", and "use my
    recovery code instead". Until then the app shows public data only.
@@ -197,17 +202,20 @@ checked against the same values.
    for word, then Face ID, then the device-signed scope change and a grant for 15
    minutes (default) or 1 hour; **Lock now** ends it. Athletes aged 13 to 17 never see
    this control, and the server refuses it for them.
-6. **Unlock notification.** Planned. A locked private read sends a notification with an
-   Unlock action; one tap and Face ID posts a fresh grant. There is no silent background
-   renewal. A "connected" notification refreshes the list and doubles as the security
+6. **Unlock notification.** Live (build 72). When an AI app asks for private data that
+   is locked, Leave sends a notification naming the app. A tap opens Connections and
+   goes straight to Face ID or the passcode, then a one-hour grant. Nothing happens if
+   sharing is off for that app. There is no Unlock button on the notification and no
+   silent background renewal. A "connected" notification refreshes the list and doubles as the security
    alert "Leave was connected to ChatGPT. Not you? Disconnect."
-7. **Add to Leave.** In testing today with the system camera and file pickers and a
-   simulated processing screen. Planned pipeline, all on the phone before any upload:
-   text from PDFs and Word files, on-device OCR for photos, Markdown plus the original
-   file each encrypted with a fresh data key and uploaded straight to storage through
-   a short-lived signed URL. If on-device OCR confidence is low the app asks before
-   sending the scan to Google's Document AI, naming the provider. Limits enforced
-   before upload: 25 MB, 60 pages, 10 uploads a day.
+7. **Add to Leave.** Live (build 72), with the system camera and file pickers. On the
+   phone, before any upload: text from PDFs and Word files, and on-device OCR for
+   photos. Then the original file and its text, each encrypted with a fresh data key,
+   go straight to storage through a short-lived signed URL. If on-device OCR
+   confidence is low, the app asks before sending the scan to Google's Document AI,
+   naming the provider. The phone checks 25 MB and 60 pages before upload. The server
+   allows 10 uploads a day (UTC day; a contract with its text counts two). Processing
+   and the queue show the server's real progress.
 8. **Cloud pickers.** Planned. Google Drive, OneDrive and Dropbox run entirely on the
    phone through the system web-auth session; the token lives in memory only and the
    server never sees it.
@@ -219,42 +227,47 @@ checked against the same values.
 10. **Web matching in the background.** Planned. A background refresh (or a
     content-available notification) builds a grant with the strand keys only, runs the
     match, and completes any pending share wraps.
-11. **Plan and usage.** Live (build 72): allowances used this month, the 80% nudge, and a soft
-    stop at 100% that finishes the current reply and offers "Add credits" (opens the
-    website in the browser) or "Wait for the 1st". Credits and subscriptions are bought
-    on the website, not through in-app purchase. Guardian-held accounts hide "Add
-    credits"; only the guardian can buy.
+11. **Plan and usage.** Live (build 72): allowances used this month on the Plan page.
+    When the Talk allowance and credits run out, Talk says so and points to Plan. In
+    the iPhone app the plan and credit packs are bought through Apple in-app purchase
+    (StoreKit 2), and the server grants them from Apple's signed transaction. In the US
+    App Store the website's Stripe checkout is offered beside it, never in its place.
+    Only the person who holds the billing sees purchase buttons. A parent or guardian
+    buys for an athlete aged 13 to 17; the athlete and a Teammate see none.
 
 ## 4. Native modules
 
 | Module | Status | Backs |
 |---|---|---|
-| Crypto bridge | Live (build 72) | everything in section 2, including recovery (Argon2id), except the Teammate wrap, which follows |
+| Crypto bridge | Live (build 72) | everything in section 2, including recovery (Argon2id) and the Teammate wrap; key rotation and revocation are planned |
 | App lock | Live (build 72) | the lock cover and its Face ID or passcode prompt, screenshot protection, clipboard expiry; turning the lock off takes Face ID or the passcode, and the lock cover and the app-switcher cover are drawn above alerts (build 45) |
 | Document text | Live (build 72) | PDF extraction, on-device OCR with confidence, Word files |
 | Speech | Live (build 72) | on-device recognition only, with an availability check; audio never leaves the phone |
 | Background refresh | Planned | scheduled Web matching |
-| Attestation | In testing (build 26) | App Check with App Attest; the token rides on every API call in X-Firebase-AppCheck, report-only on the server until it enforces |
-| Universal links | In testing (build 30) | leaveyouragent.com/billing/* only (the return from Stripe Checkout and the portal), plus the leaveyouragent:// scheme as the fallback page's button; the live app only. A link opens the Plan page and proves nothing: the plan changes only when Stripe's webhook reaches the server. The sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
-| Push | In testing (build 26) | Firebase Cloud Messaging through Swift Package Manager; the demo build carries no Firebase config and never registers; notifications carry one fixed sentence and record ids only, never private content; the token is taken off the account at sign-out |
-| Crash reporting | In testing (build 40) | Leave's own; no crash-reporting company receives anything. A report holds the error's kind, code locations as numbers, the app build, the iOS version and the iPhone model; no message text, names, logs or identifiers. Saved on the phone, sent at the next launch after a sign-in to Leave's API, kept 30 days. Off in Leave Demo; a switch in Profile. From build 54 the Crash reports screen shows the last report as plain rows (what kind, where as a count of places in Leave's code, how many times, the app and iOS versions, the iPhone model) with the exact report one row away. The phone keeps, for itself, the time it last sent a report so that the screen can say when; that time is never added to a report or sent, and it is removed when the switch is turned off or the account is deleted |
+| Attestation | Live (build 72) | App Check with App Attest; the token rides on every API call in X-Firebase-AppCheck, report-only on the server until it enforces |
+| Universal links | Live (build 72) | leaveyouragent.com/billing/* only (the return from Stripe Checkout and the portal), plus the leaveyouragent:// scheme as the fallback page's button; the live app only. A link opens the Plan page and proves nothing: the plan changes only when Stripe's webhook reaches the server. The sign-in and connector hosts are deliberately excluded so the app can never take over a sign-in page |
+| Push | Live (build 72) | Firebase Cloud Messaging through Swift Package Manager; the demo build carries no Firebase config and never registers; notifications carry one fixed sentence and record ids only, never private content; the token is taken off the account at sign-out |
+| Crash reporting | Live (build 72) | Leave's own; no crash-reporting company receives anything. A report holds the error's kind, code locations as numbers, the app build, the iOS version and the iPhone model; no message text, names, logs or identifiers. Saved on the phone, sent at the next launch after a sign-in to Leave's API, kept 30 days. Off in Leave Demo; a switch in Profile. From build 54 the Crash reports screen shows the last report as plain rows (what kind, where as a count of places in Leave's code, how many times, the app and iOS versions, the iPhone model) with the exact report one row away. The phone keeps, for itself, the time it last sent a report so that the screen can say when; that time is never added to a report or sent, and it is removed when the switch is turned off or the account is deleted |
 | Events | Planned | feature events to Leave's own endpoint under a random per-install identifier that is never joined to the account |
 
 ## 5. Decisions recorded (all 2026-09-23)
 
 - **Minimum age 13, no exceptions.** The age gate refuses a birth date under 13. Ages
   13 to 17 use Leave through a parent or legal guardian, who is the required Teammate
-  and holds billing. Built.
+  and holds billing. Live (build 72).
 - **Key roles.** Share syncs and wraps; account key pair is derived from it; Secure
-  Enclave key is per-device identity. Planned.
+  Enclave key is per-device identity. Live (build 72).
 - **Share accessibility.** Readable after first unlock so background Web runs work,
-  with the trade-off recorded in the backend plan. Planned.
-- **Connecting an AI assistant is web-only and public-only.** Private access is turned
-  on afterwards in the app, per assistant, for at most 1 hour at a time, and never for
-  athletes aged 13 to 17. Planned.
-- **Assistants named in the app** are ChatGPT, Claude and Gemini. Built.
-- **Terms version.** The app records the accepted version (currently 2026-09-23) and
-  will ask for re-acceptance when it changes. Built.
+  with the trade-off recorded in the backend plan. Live (build 72). Background Web
+  runs are planned.
+- **Connecting an AI assistant is web-only and public-only.** Live (build 72). Private
+  sharing is turned on in Connections with a signed confirmation and Face ID; it
+  starts unlocked for 15 minutes, and later unlocks are 15 minutes or 1 hour; the
+  control is hidden for athletes aged 13 to 17 and for their guardian's sign-in.
+- **Assistants named in the app** are ChatGPT, Claude and Gemini. Live (build 72).
+- **Terms version.** The app records the accepted version (currently 2026-10-05).
+  Live (build 72): the version is recorded. Asking for re-acceptance when it changes
+  is planned.
 
 ## 6. Security review
 
