@@ -4,6 +4,8 @@
 
 The status lines in the README and the architecture document now say Leave is on the App Store for iPhone (since 2026-10-19) and on Google Play for Android (since 2026-10-24); they had still said Android was in review. The app document's status names the store's current Android version, 1.3.1 (code 19), not yet checked here. Nothing else changed.
 
+Same day: the architecture document's payments section said billing was in testing on Stripe's test environment (status as of 2026-10-01); production has run on Stripe's live environment since 2026-10-05, and the status now says so.
+
 ## 2026-10-25, the MCP document names both apps
 
 `docs/mcp.md` now says the Leave app is on the App Store for iPhone and on Google Play (US) for Android, and the Connections screen is in both. Where it said Face ID alone, it says Face ID or the phone's fingerprint or face unlock. Nothing about the MCP server changed.

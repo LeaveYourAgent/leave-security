@@ -299,7 +299,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 
 ## 2e. Payments: Stripe
 
-Status as of 2026-10-01: **in testing**, built and verified end to end on Stripe's test environment (trial, renewal, failed card and retries, cancellation, a card that needs 3D Secure, a credit pack with a refund, and a dispute). No real payment is taken until Leave goes live.
+Status as of 2026-10-25: **live**. Production has run on Stripe's live environment since 2026-10-05. Before that it was built and verified end to end on Stripe's test environment (trial, renewal, failed card and retries, cancellation, a card that needs 3D Secure, a credit pack with a refund, and a dispute).
 
 **Who is the seller.** Plans and credits are sold through Stripe Managed Payments, so Stripe (through its Link service) is the merchant of record. Stripe calculates, collects and remits sales tax, handles card disputes, and answers billing questions. Card statements read "LINK.COM* LEAVE YOUR A". Leave may move to selling directly with Stripe Tax later; this page will say so before it happens.
 
