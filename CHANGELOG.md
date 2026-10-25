@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-25, the MCP document names both apps
+
+`docs/mcp.md` now says the Leave app is on the App Store for iPhone and on Google Play (US) for Android, and the Connections screen is in both. Where it said Face ID alone, it says Face ID or the phone's fingerprint or face unlock. Nothing about the MCP server changed.
+
 ## 2026-10-25, Android 1.3.0 (code 18) on Google Play
 
 Android 1.3.0 reached Google Play the same day; the app code is the same on both platforms, so the build 78 entry below holds for code 18 with these differences, each checked with the app session: the local store moves to AES-256 with a 192-bit key under the phone's hardware-backed Keystore key; every screen is classified for screenshot protection, including sign-in, sign-up and deletion; links open only when `https:`; leave-crypto is tagged `android-18` and the Android pipeline refuses an archive whose crypto files differ; the CI scanners cover the Gradle lockfiles. No third-party keyboard block on Android (the iPhone rule is iPhone only); the native recovery-code field asks keyboards not to learn from it. Code shrinking (R8) is still off. The server's report kinds, switched off earlier that day while a fault was fixed, are on again since 2026-10-25.
