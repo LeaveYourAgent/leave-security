@@ -2,9 +2,11 @@
 
 **Status as of 2026-10-25.** The app has been on the App Store since 2026-10-19
 (build 68, version 1.0); the current store build is 78 (version 1.3, on sale
-2026-10-25). Android 1.3.0 (version code 18) has been live on Google Play since
-2026-10-25 (1.2.0, code 12, since 2026-10-24); the app code is the same on both
-platforms, so a build 78 fact holds for code 18 unless a line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
+2026-10-25). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
+1.3.0 (version code 18) since 2026-10-25, and the store's current Android version is
+1.3.1 (code 19, 2026-10-25), whose differences from code 18 are not yet checked here.
+The app code is the same on both platforms, so a build 78 fact holds for code 18
+unless a line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
 (in a TestFlight or Play internal build only), or **Planned** (designed, agreed with
 the backend, not yet in code). A "Live (build 72)" mark means the fact has not changed
 since that build; "build 78" marks what changed in 1.3.

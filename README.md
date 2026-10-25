@@ -6,7 +6,7 @@ The plain-language version, with what is live today, is at **https://leaveyourag
 
 ## Status
 
-Status as of **October 19, 2026**: Leave is on the App Store for iPhone, and the Android app is in review with Google Play. The production backend is live. What is live today, item by item, is on https://leaveyouragent.com/security, which is kept current; some documents here still describe the design as planned and are being brought up to date. Each document marks what is built, in testing, or planned. When that changes, the documents change here, with history.
+Status as of **October 25, 2026**: Leave is on the App Store for iPhone (since October 19, 2026) and on Google Play for Android (since October 24, 2026). The production backend is live. What is live today, item by item, is on https://leaveyouragent.com/security, which is kept current; some documents here still describe the design as planned and are being brought up to date. Each document marks what is built, in testing, or planned. When that changes, the documents change here, with history.
 
 ## What's here
 

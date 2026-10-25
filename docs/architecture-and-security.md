@@ -1,12 +1,12 @@
 # Leave on Google Cloud: architecture and security
 
-Live on the App Store since 2026-10-19; the Android app is in review on Google Play, not yet in production. Status as of 2026-10-24.
+Live on the App Store for iPhone since 2026-10-19 and on Google Play for Android since 2026-10-24. Status as of 2026-10-25.
 
 **Note, 2026-10-24:** this document was corrected against what is live on 2026-10-24; the changelog lists each change.
 
 **What exists today**
 
-- **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com; the backend on Cloud Run (sign-in, records, contracts, Talk, the Web, billing through Stripe, the App Store and Google Play, and the MCP server); the iPhone app. The Android app is in review on Google Play, not yet in production.
+- **Live:** the marketing site, the Terms and the Privacy Policy at leaveyouragent.com; the backend on Cloud Run (sign-in, records, contracts, Talk, the Web, billing through Stripe, the App Store and Google Play, and the MCP server); the iPhone app; the Android app (on Google Play since 2026-10-24).
 - **Configured:** the WorkOS production environment.
 - **Applied:** the Terraform for the three stages, at the launch profile; the Neo4j VM and the NAT are running.
 - **Design:** everything else in this document unless a line says otherwise.
