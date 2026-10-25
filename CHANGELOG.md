@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-25, iOS 1.3 (build 78) on the App Store
+
+The iOS document is brought up to the store build, each fact checked against the build 78 source (the commit tagged `ios-78` in leave-crypto). Android 1.3 is not in production; nothing here is about it.
+
+- Local store: the key is now AES-256 with a 192-bit random key. Builds 77 and before opened the store with the library's default AES-128, which read only the first 16 bytes of a key written as 32 hexadecimal characters, so 64 random bits protected it. Build 78 moves the stores to a new file under the new key on first launch and deletes the old files and key. The store library's encryption has no integrity check at any key length; the store was never in a backup and never left the phone.
+- Screens: every screen is classified private or public with a test; saved conversations, reports, export, upload, the Teammate and Devices screens, the NIL payment screens and the sign-in, sign-up and deletion screens are now kept out of screenshots.
+- Keyboards: a third-party keyboard is refused while a secret field is up (the sign-in code, the recovery code); everywhere else other keyboards stay (decided 2026-10-24, so accessibility and other-language keyboards keep working in Talk). Recorded against MASVS-PLATFORM-1 as partial, accepted.
+- Clipboard: a copied Talk reply leaves the clipboard after 2 minutes. Contract text still leaves after 30 seconds.
+- Links: server-supplied links open only when they are `https:`, from one place in the code that a Semgrep rule guards.
+- Talk 1.3: a reply that needs one contract's full terms, or why one Web thread fits, asks the phone for that one item's key mid-turn; the phone answers with a grant for that record alone. Reports are written on the phone as tagged PDFs (PDF/UA-1).
+- Crypto: `contractMarks` is a new record type in the encryption's associated data. leave-crypto is tagged per store build (`ios-72`, `ios-77`, `ios-78`, `android-17`, `android-18`) and both release pipelines refuse an archive whose crypto files differ from the tagged copy.
+- Checks on every change now include OSV-Scanner over every lockfile, a 7-day minimum age for new package versions, Semgrep with Leave's own blocking rules, and a PDF/UA-1 check of every report PDF with veraPDF.
+- The usage row said purchases were web-only; it now matches item 11 (Apple in-app purchase beside the website's Stripe checkout on the US App Store).
+- Section 6 records the 2026-10-24 internal review: what build 78 fixed, and what is still planned (pinning the server's session key and the Teammate's key on the phone, a nonce in the confirmation header, jailbreak awareness).
+
 ## 2026-10-24, further corrections
 
 More lines checked against the code and the live configuration the same day:
