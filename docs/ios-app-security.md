@@ -4,9 +4,13 @@
 (build 68, version 1.0); the current store build is 78 (version 1.3, on sale
 2026-10-25). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
 1.3.0 (version code 18) since 2026-10-25, and the store's current Android version is
-1.3.1 (code 19, 2026-10-25), whose differences from code 18 are not yet checked here.
-The app code is the same on both platforms, so a build 78 fact holds for code 18
-unless a line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
+1.3.1 (code 19, 2026-10-25). Code 19 against 18, checked against the source and the
+signed bundle: code shrinking (R8) is on in the release build, so libraries are shrunk
+and renamed while Leave's own classes keep their names by design; the crypto files are
+unchanged (leave-crypto tag `android-19` is the same commit as `ios-78`); the sign-in
+code field is now reachable by screen readers, with no change to how the code is handled;
+no new screens, keyboards or links. The app code is the same on both platforms, so a
+build 78 fact holds for code 18 and 19 unless a line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
 (in a TestFlight or Play internal build only), or **Planned** (designed, agreed with
 the backend, not yet in code). A "Live (build 72)" mark means the fact has not changed
 since that build; "build 78" marks what changed in 1.3.

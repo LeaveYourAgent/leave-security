@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-25, Android 1.3.1 (code 19) on Google Play
+
+Code 19 against 18, checked with the app session against the source and the signed bundle: code shrinking (R8) is on in the release build (libraries shrunk and renamed; Leave's own classes keep their names by design; the entry below that said shrinking was still off no longer holds from 19 on); the crypto files are unchanged, `android-19` tagged on the same commit as `ios-78`, and the pipeline's drift check matched; the sign-in code field is reachable by screen readers, with no change to how the code is handled; no new screens, keyboards or links. The app document's status says so.
+
 ## 2026-10-25, status: on the App Store and Google Play
 
 The status lines in the README and the architecture document now say Leave is on the App Store for iPhone (since 2026-10-19) and on Google Play for Android (since 2026-10-24); they had still said Android was in review. The app document's status names the store's current Android version, 1.3.1 (code 19), not yet checked here. Nothing else changed.
