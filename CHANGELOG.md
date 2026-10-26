@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-26, Neo4j over TLS
+
+The architecture document said the connection from Cloud Run to the graph database inside the private network was not yet TLS and was being changed. Since 2026-10-26 it runs over TLS, required on the server side, and the sync job proves the connection on every run. The same day the app's sign-in tokens became bound to Leave's own client on the server, enforced; nothing changes for the athlete.
+
 ## 2026-10-26, 1.4.0 on both stores (iOS build 80, Android code 20) and web search in Talk
 
 - Status: iOS 1.4.0 (build 80) on the App Store and Android 1.4.0 (version code 20) on Google Play, both 2026-10-26. The crypto files are unchanged (the `ios-80` and `android-20` tags are the same commit as `ios-78` and `android-19`).
