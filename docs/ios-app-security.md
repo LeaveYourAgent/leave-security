@@ -1,16 +1,18 @@
 # Leave iOS app: security design
 
-**Status as of 2026-10-25.** The app has been on the App Store since 2026-10-19
-(build 68, version 1.0); the current store build is 78 (version 1.3, on sale
-2026-10-25). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
-1.3.0 (version code 18) since 2026-10-25, and the store's current Android version is
-1.3.1 (code 19, 2026-10-25). Code 19 against 18, checked against the source and the
-signed bundle: code shrinking (R8) is on in the release build, so libraries are shrunk
-and renamed while Leave's own classes keep their names by design; the crypto files are
-unchanged (leave-crypto tag `android-19` is the same commit as `ios-78`); the sign-in
-code field is now reachable by screen readers, with no change to how the code is handled;
-no new screens, keyboards or links. The app code is the same on both platforms, so a
-build 78 fact holds for code 18 and 19 unless a line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
+**Status as of 2026-10-26.** The app has been on the App Store since 2026-10-19
+(build 68, version 1.0); the current store build is 80 (version 1.4.0, on sale
+2026-10-26). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
+1.3.0 (version code 18) since 2026-10-25, 1.3.1 (code 19) the same day, and the store's
+current Android version is 1.4.0 (code 20, on the listing 2026-10-26). From code 19 the
+Android release build has code shrinking (R8) on, so libraries are shrunk and renamed
+while Leave's own classes keep their names by design; the sign-in code field is reachable
+by screen readers, with no change to how the code is handled. 1.4.0 (build 80, code 20)
+adds Talk's web search on the phone's side, described in the Talk row. The crypto files
+are unchanged across all of these: leave-crypto tags `ios-78`, `ios-80`, `android-19` and
+`android-20` are the same commit, and both pipelines' drift checks matched. The app code
+is the same on both platforms, so a build 78 fact holds for every later build unless a
+line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
 (in a TestFlight or Play internal build only), or **Planned** (designed, agreed with
 the backend, not yet in code). A "Live (build 72)" mark means the fact has not changed
 since that build; "build 78" marks what changed in 1.3.
@@ -57,7 +59,7 @@ our hosting provider, or by a vendor outside a session the athlete started.
 | On-device contract text extraction and OCR before upload | Live (build 72; from build 15): PDF text layer, Vision OCR for scans and photos, a Word reader; Google's OCR only after the athlete agrees on screen |
 | On-device speech recognition only | Live (build 72; from build 25): the phone turns speech into text itself and sends the text; every request requires on-device recognition, so audio never leaves the phone. Where the phone has no on-device model for the language, voice says it is unavailable and typing carries on; there is no server fallback |
 | Connections: public-only AI connections, per-client private unlock with retention notice | Live (build 72; from build 21): the list of connected AI apps, Share private data behind that app's retention notice and a confirmation signed by the phone, unlock for 15 minutes or 1 hour with a countdown, Lock now, Disconnect; never shown for 13 to 17 Each unlock of private data for an AI app asks for Face ID or the passcode (build 45) |
-| Talk to Leave: every turn streams from the API with a grant for the strands it may read; what Leave saves comes back as a receipt the phone opens; since app 1.2 (build 72) the conversation and up to 200 saved conversations are kept on the phone in the encrypted local store, out of backups, and deleted at sign-out; Leave's servers keep none of it. From 1.3 (build 78) a reply that needs one contract's full terms, or why one Web thread fits, asks the phone for that one item's key in the middle of the turn, and the phone answers with a grant for that single record, so a Talk turn starts with no contract or thread keys at all. A thumbs up or down on a reply or a report is kept on the server for 90 days, linked to the reply, with no words (1.3). The app can write a report as a tagged PDF (PDF/UA-1) on the phone; the server's report kinds were switched off for part of 2026-10-25 while a fault was fixed and are on again since 2026-10-25 | Live (build 78) |
+| Talk to Leave: every turn streams from the API with a grant for the strands it may read; what Leave saves comes back as a receipt the phone opens; since app 1.2 (build 72) the conversation and up to 200 saved conversations are kept on the phone in the encrypted local store, out of backups, and deleted at sign-out; Leave's servers keep none of it. From 1.3 (build 78) a reply that needs one contract's full terms, or why one Web thread fits, asks the phone for that one item's key in the middle of the turn, and the phone answers with a grant for that single record, so a Talk turn starts with no contract or thread keys at all. From 1.4.0 (build 80, Android code 20), on since 2026-10-26, Talk can search the public web for a question about something outside Leave: the server's AI writes one short topic from the question, checked to carry no name, school, team or place, and searches it with the market and sport from the public record; never the question itself, a strand, a contract term, a thread or the summary. The phone shows the answer only to you and keeps it only in the conversation on the phone, with each source's title and domain (never its address, which lives only in memory while the screen is open, and opens only when `https:`); in later turns the searched reply goes back to the server only as "[a web search answer]", never its words, titles, domains or addresses; and the two-year removal takes the sources with the text. Also from 1.4.0, a reply that is not whole after 120 seconds ends with a quiet line. A thumbs up or down on a reply or a report is kept on the server for 90 days, linked to the reply, with no words (1.3). The app can write a report as a tagged PDF (PDF/UA-1) on the phone; the server's report kinds were switched off for part of 2026-10-25 while a fault was fixed and are on again since 2026-10-25 | Live (build 78) |
 | Leave Web live: strands, threads and signals read from the API, thread text opened on the phone, a run of the matcher with a grant that holds only the strand keys. From API contract v1.13.0 a run is accepted at once and done by a queued task: the sealed grant travels in the task, is opened only by the instance doing the work, and expires 15 minutes after the phone made it, the same as a contract's reading. The app follows the run's state from build 55 | Live (build 72; from build 25; the queued run from build 55) |
 | Export my data: the server packs every private record as the ciphertext it stores, without reading any; the phone downloads the archive, opens each record with the key it holds and offers a plain zip through the share sheet, deleting its own copies afterwards; asking is signed by the phone behind Face ID | Live (build 72; from build 25) |
 | Teammate view: a Teammate or guardian reads, read-only, only what the athlete's phone has wrapped to their account key (contracts, Web threads) plus the public record; strands are never wrapped to anyone | Live (build 72; from build 27) |

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-26, 1.4.0 on both stores (iOS build 80, Android code 20) and web search in Talk
+
+- Status: iOS 1.4.0 (build 80) on the App Store and Android 1.4.0 (version code 20) on Google Play, both 2026-10-26. The crypto files are unchanged (the `ios-80` and `android-20` tags are the same commit as `ios-78` and `android-19`).
+- Talk can search the public web for a question about something outside Leave, on since 2026-10-26 for builds 80 and 20. The architecture document and the app document say what a search sends (one short topic written from the question, checked to hold no name, school, team or place, with the market and sport; never the question, a strand, a contract term, a thread or the summary) and what the phone keeps (the answer only in the conversation on the phone, sources as title and domain, never an address on disk or in a request).
+- Also from 1.4.0: a Talk reply that is not whole after 120 seconds ends with a quiet line.
+
 ## 2026-10-25, Android 1.3.1 (code 19) on Google Play
 
 Code 19 against 18, checked with the app session against the source and the signed bundle: code shrinking (R8) is on in the release build (libraries shrunk and renamed; Leave's own classes keep their names by design; the entry below that said shrinking was still off no longer holds from 19 on); the crypto files are unchanged, `android-19` tagged on the same commit as `ios-78`, and the pipeline's drift check matched; the sign-in code field is reachable by screen readers, with no change to how the code is handled; no new screens, keyboards or links. The app document's status says so.
