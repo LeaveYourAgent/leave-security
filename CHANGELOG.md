@@ -2,7 +2,7 @@
 
 ## 2026-10-27, the edge's free-text exception, said plainly
 
-The architecture document's Cloud Armor row now says that six injection signatures are not applied to the one request shape that carries an athlete's own words (an MCP tool call on the transport path, and four api routes that take free text), and why. That exception existed before and was wider (the whole MCP host); on 2026-10-27 it was narrowed to those requests, after a per-field exclusion was tested and found not to reach JSON body keys.
+The architecture document's Cloud Armor row now says that some injection signatures are not applied to the one request shape that carries an athlete's own words (an AI app's tool call, and four api routes that take free text), and why. That exception existed before and was wider (the whole MCP host); on 2026-10-27 it was narrowed to those requests, after a per-field exclusion was tested and found not to reach JSON body keys.
 
 ## 2026-10-26, Neo4j over TLS
 
