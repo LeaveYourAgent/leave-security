@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-27, the edge's free-text exception, said plainly
+
+The architecture document's Cloud Armor row now says that six injection signatures are not applied to the one request shape that carries an athlete's own words (an MCP tool call on the transport path, and four api routes that take free text), and why. That exception existed before and was wider (the whole MCP host); on 2026-10-27 it was narrowed to those requests, after a per-field exclusion was tested and found not to reach JSON body keys.
+
 ## 2026-10-26, Neo4j over TLS
 
 The architecture document said the connection from Cloud Run to the graph database inside the private network was not yet TLS and was being changed. Since 2026-10-26 it runs over TLS, required on the server side, and the sync job proves the connection on every run. The same day the app's sign-in tokens became bound to Leave's own client on the server, enforced; nothing changes for the athlete.
