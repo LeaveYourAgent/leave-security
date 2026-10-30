@@ -27,7 +27,7 @@ Written 2026-09-22, security review 2026-09-23. One environment (production) for
 | Brand logos and colors | Every contract shows in its brand's colors with the brand's logo; brands are Leave's own table, maintained in-house | A `brands` table (keyed by brand only, never an athlete), a separate `brands` service that fetches public brand marks from the brand's own site (isolated from every key and from contract data), a private logo bucket served through a CDN at cdn.leaveyouragent.com, a task queue and a monthly refresh |
 | The Leave Web | Private strands + public record + public signals (brand posts, casting calls, press, deal announcements, sponsor programs, own contracts); each thread = strand + signal + potential move; blocked-by-exclusivity edges with re-open dates | Neo4j knowledge graph (athletes, strands, signals, contracts, clauses, brands, markets and the edges between them), pgvector embeddings for candidate matching, Cloud Scheduler + Cloud Run Jobs for the signal crawlers, Grounding with Google Search in the on-demand Web run, Gemini 3.8 Flash for connection generation, FCM push for "new connection" |
 | Profile | Public record from the talent database, private card, Teammate, Plan (Stripe portal), Export data, Connections (MCP clients) | Cloud SQL `talent` table holding records only for athletes who have signed up (the public record is looked up at sign-up; no profile is ever pre-built for someone who is not a user), Stripe Billing + webhooks, export job writing to Cloud Storage, MCP client table |
-| Learn series, Up Next, Accessibility | Static content, reminders, settings | App bundle + Postgres; Cloud Scheduler for payment/deliverable reminders |
+| Learn series, Up Next, Accessibility | Static content, reminders, settings | App bundle + Postgres; Cloud Scheduler for the contract-date reminders |
 | Analytics events | tour_started, tour_step_viewed, etc., never attached to private data | First-party events table in Postgres, pseudonymous, exported to BigQuery in Leave's own project (Firebase Analytics dropped in the security review) |
 | Mobile release | iOS and Android, push, crash reports | Firebase for FCM and App Check only (no Firebase Auth, no Firebase Analytics, no Crashlytics: crash reports go to Leave's own API), Apple Developer Program, Google Play |
 
@@ -206,7 +206,7 @@ Leave has to read strands and contracts to explain a clause or find a Web thread
 - **Public signals** (brand posts, casting calls, press) and their embeddings. They are public; the pgvector HNSW index is built over these only.
 - **Private embeddings are ciphertext.** An embedding of a private strand can be inverted back to the sentence, so strand embeddings are stored encrypted with the data key and compared against the public index in memory during a grant. An athlete has tens of strands, so this is a few milliseconds.
 - **Neo4j** holds private nodes with an opaque ID and encrypted properties. The graph shape is visible (this athlete has 9 strands and 4 threads); the content is not.
-- **Metadata** the service needs to run: account IDs, seat state, contract count, payment dates, file sizes, timestamps. Support works from this and nothing else.
+- **Metadata** the service needs to run: account IDs, seat state, contract count, file sizes, timestamps, the brand named on each contract, and the dates reminders go from: payment dates, deliverable due dates, when a contract and its exclusivity end, its notice days and, since 2026-10-30, the signing date, the day a disclosure window ends and the day the athlete marked a deal reported. Never an amount or a clause. Support works from this and nothing else.
 
 ### The athlete's key screen (Profile → Connections, plan & data → Your key)
 
@@ -355,7 +355,7 @@ iPhone app ──┐                                   ChatGPT / Claude / Gemini
              ├──► WorkOS AuthKit (identity, Magic Auth, OAuth 2.1 for MCP; webhooks back for user events)
              └──► Firebase: FCM, App Check (crash reports go to Leave's own API, POST /v1/crash-reports)
 
-   Cloud Scheduler ──► Cloud Run Jobs "crawler" (nightly public signals per market), "reminders" (payment / deliverable dates)
+   Cloud Scheduler ──► Cloud Run Jobs "crawler" (nightly public signals per market), "reminders" (payment, deliverable, contract-end, notice and disclosure-window dates)
    Cloud Monitoring: uptime checks on both hosts, alert policies → email + SMS
 ```
 

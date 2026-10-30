@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-30, 1.5.0 on both stores (iOS build 81, Android code 21) and state rules on a deal
+
+- Status: iOS 1.5.0 (build 81) on the App Store and Android 1.5.0 (version code 21) on Google Play, both since 2026-10-27. The crypto files are unchanged (the `ios-81` and `android-21` tags are the same commit as `ios-80` and `android-20`).
+- State rules on a deal, on since 2026-10-30 for builds 81 and 21. The app document has a row for them: where the athlete plays is answered as a question (no location permission; a parent or guardian sets it for an athlete aged 13 to 17), the rules are public data shipped in the app and refreshed without sign-in, and a deal's packet is written on the phone and shared only by the athlete.
+- Three more dates are kept on Leave's servers unencrypted, beside the payment dates, so the reminders can go: the signing date, the day a disclosure window ends and the day the athlete marked a deal reported. The architecture document's metadata list now names them, and also names what it had left out since 2026-10-22: the brand named on each contract, deliverable due dates, when a contract and its exclusivity end, and notice days. Never an amount or a clause.
+
 ## 2026-10-27, the edge's free-text exception, said plainly
 
 The architecture document's Cloud Armor row now says that some injection signatures are not applied to the one request shape that carries an athlete's own words (an AI app's tool call, and four api routes that take free text), and why. That exception existed before and was wider (the whole MCP host); on 2026-10-27 it was narrowed to those requests, after a per-field exclusion was tested and found not to reach JSON body keys.
