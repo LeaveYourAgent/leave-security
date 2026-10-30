@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, a sealed grant's 15 minutes is what Leave's servers enforce
+
+The app document said a Web run's sealed grant "expires 15 minutes after the phone made it". That is what Leave's servers enforce; it is not true of a copy. Today, when work goes on after the athlete asks (reading a contract, a Web run, a Talk reply that opens one contract or thread), the sealed grant is stored for that time in the task queue or the database, and copies can remain in the database's recovery logs for up to 7 days; someone who also held Leave's cloud key could open those copies. The row now says "on Leave's servers", and the security page says the same. The architecture document already described the handoff. The fix is approved and planned: those copies will be sealed under keys that are destroyed within about a day, after which they can no longer be opened by Leave or anyone holding a copy.
+
 ## 2026-10-30, the metadata list names the disclosure window's rule
 
 Beside the day a disclosure window ends, Leave's servers keep which state or association rule that window comes from (an id from the public rules dataset, such as a state's high school 72-hour rule). The architecture document's metadata list now says so, the same as the security page and the Privacy Policy.
