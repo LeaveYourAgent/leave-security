@@ -206,7 +206,7 @@ Leave has to read strands and contracts to explain a clause or find a Web thread
 - **Public signals** (brand posts, casting calls, press) and their embeddings. They are public; the pgvector HNSW index is built over these only.
 - **Private embeddings are ciphertext.** An embedding of a private strand can be inverted back to the sentence, so strand embeddings are stored encrypted with the data key and compared against the public index in memory during a grant. An athlete has tens of strands, so this is a few milliseconds.
 - **Neo4j** holds private nodes with an opaque ID and encrypted properties. The graph shape is visible (this athlete has 9 strands and 4 threads); the content is not.
-- **Metadata** the service needs to run: account IDs, seat state, contract count, file sizes, timestamps, the brand named on each contract, and the dates reminders go from: payment dates, deliverable due dates, when a contract and its exclusivity end, its notice days and, since 2026-10-30, the signing date, the day a disclosure window ends and the day the athlete marked a deal reported. Never an amount or a clause. Support works from this and nothing else.
+- **Metadata** the service needs to run: account IDs, seat state, contract count, file sizes, timestamps, the brand named on each contract, and the dates reminders go from: payment dates, deliverable due dates, when a contract and its exclusivity end, its notice days, whether it renews on its own and, since 2026-10-30, the signing date, the day a disclosure window ends and the day the athlete marked a deal reported. Never an amount or a clause. Support works from this and nothing else.
 
 ### The athlete's key screen (Profile → Connections, plan & data → Your key)
 

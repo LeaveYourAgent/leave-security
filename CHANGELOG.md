@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, the metadata list names the renewal flag
+
+The architecture document's metadata list now also says Leave's servers keep whether a contract renews on its own, beside its dates, for the renewal and notice reminders. That flag has been kept since 2026-10-22; the list left it out.
+
 ## 2026-10-30, 1.5.0 on both stores (iOS build 81, Android code 21) and state rules on a deal
 
 - Status: iOS 1.5.0 (build 81) on the App Store and Android 1.5.0 (version code 21) on Google Play, both since 2026-10-27. The crypto files are unchanged (the `ios-81` and `android-21` tags are the same commit as `ios-80` and `android-20`).
