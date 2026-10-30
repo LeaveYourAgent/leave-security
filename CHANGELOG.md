@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, the brand-logo CDN no longer lists its files
+
+A request for the front of `cdn.leaveyouragent.com` returned the list of every logo file in the bucket behind it, because the load balancer's access to the bucket included listing. The logos are public by design and their names are content hashes with no ids; of the brands with a logo, none came only from the contracts of one athlete or a few. Since 2026-10-30 the load balancer can read a logo by name and cannot list the bucket; the front answers 403.
+
 ## 2026-10-30, Teammate invites to existing accounts
 
 An invite sent to the email of someone who already had a Leave account linked that account as the athlete's Teammate at once: there was no step on the invited person's side and no 18-or-older check, which new Teammate accounts get at sign-up. A count of production records showed the path had never been used, so no account was affected. Since 2026-10-30 an invite no longer links an existing account at once, an athlete under 18 or an account held through a guardian cannot be made a Teammate, an athlete cannot invite their own address, and the guardian's write of where an athlete plays requires the guardian link.
