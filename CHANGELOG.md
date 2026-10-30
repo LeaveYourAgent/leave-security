@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, the metadata list names the disclosure window's rule
+
+Beside the day a disclosure window ends, Leave's servers keep which state or association rule that window comes from (an id from the public rules dataset, such as a state's high school 72-hour rule). The architecture document's metadata list now says so, the same as the security page and the Privacy Policy.
+
 ## 2026-10-30, the metadata list names the renewal flag
 
 The architecture document's metadata list now also says Leave's servers keep whether a contract renews on its own, beside its dates, for the renewal and notice reminders. That flag has been kept since 2026-10-22; the list left it out.
