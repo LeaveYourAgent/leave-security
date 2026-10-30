@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-30, two lines matched to the code
+
+- The API contract said the Teammate routes have no write routes. Since 2026-10-26 there is one: `PUT /teammate/athletes/{athleteId}/place`, by which the parent or guardian of an athlete aged 13 to 17 sets where the athlete plays (state, level and school). It is refused for an adult athlete. The section now says so.
+- The architecture document's limits table said sign-in codes are limited to 5 per email per 15 minutes. The code allows 3 per email per 15 minutes and 20 per email per day; the table now says so.
+
 ## 2026-10-30, a sealed grant's 15 minutes is what Leave's servers enforce
 
 The app document said a Web run's sealed grant "expires 15 minutes after the phone made it". That is what Leave's servers enforce; it is not true of a copy. Today, when work goes on after the athlete asks (reading a contract, a Web run, a Talk reply that opens one contract or thread), the sealed grant is stored for that time in the task queue or the database, and copies can remain in the database's recovery logs for up to 7 days; someone who also held Leave's cloud key could open those copies. The row now says "on Leave's servers", and the security page says the same. The architecture document already described the handoff. The fix is approved and planned: those copies will be sealed under keys that are destroyed within about a day, after which they can no longer be opened by Leave or anyone holding a copy.

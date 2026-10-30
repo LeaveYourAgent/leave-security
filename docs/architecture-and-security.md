@@ -125,7 +125,7 @@ On the routes that carry a person's own words, individual signatures that misfir
 
 | Action | Limit | Why |
 |---|---|---|
-| Sign-in code requests | 5 per email per 15 min, 20 per IP per hour; code expires in 10 min; 5 wrong attempts invalidates it | stops email bombing and code guessing |
+| Sign-in code requests | 3 per email per 15 min and 20 per email per day, 20 per IP per hour; code expires in 10 min; 5 wrong attempts invalidates it | stops email bombing and code guessing |
 | OAuth dynamic client registration and token issuance | handled inside WorkOS AuthKit, with WorkOS Radar available for bot and abuse detection | the authorization server is not Leave's code, so these limits are not Leave's to build |
 | Talk to Leave | 200 turns per athlete per day, 30 per hour; 4 concurrent streams | a normal day is about 20 turns; the cap contains a scripted or runaway account |
 | Contract uploads | 10 per athlete per day, 25 MB and 60 pages each; Cloud Tasks queue capped at 20 dispatches per second | keeps Document AI and the model within quota and makes a queue backlog visible |
