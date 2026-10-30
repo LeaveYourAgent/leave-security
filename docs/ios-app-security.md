@@ -311,8 +311,12 @@ in build 78), server-supplied links opened without a scheme check (build 78 open
 `https:` links only, from one place in the code that a Semgrep rule guards), and
 third-party keyboards unrestricted on secret fields (build 78). Still open from it, and
 planned: pinning the server's session public key and the Teammate's key on the phone
-rather than trusting what the server returns, a nonce in the device-signed confirmation
-header, and jailbreak awareness. The review's findings and fixes are logged on the
+rather than trusting what the server returns, binding the device-signed confirmation
+to the request it confirms (a nonce and a digest of the request), and jailbreak awareness.
+Since 2026-10-30 Leave's servers accept each device-signed confirmation once, on whichever
+server instance receives it, keyed on the phone and the exact signed message (not its
+encoding), so a captured confirmation cannot be used a second time; this needed no app
+update. The review's findings and fixes are logged on the
 security page as they land.
 
 ## 7. Build order (remaining)

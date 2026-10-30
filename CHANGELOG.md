@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, a phone's confirmation can be used once
+
+Actions that need a confirmation signed by the athlete's phone (deleting the account, exporting data, changing the Teammate, turning on private data for an AI app, and the others the API contract lists) were accepted again within the confirmation's five-minute window if someone had captured one. Since 2026-10-30 Leave's servers accept each confirmation once, across all server instances, keyed on the phone and the exact signed message rather than the signature's encoding; a second use is refused. No app update was needed. Binding the confirmation to the request it confirms is planned and is listed in the app document's open items.
+
 ## 2026-10-30, two lines matched to the code
 
 - The API contract said the Teammate routes have no write routes. Since 2026-10-26 there is one: `PUT /teammate/athletes/{athleteId}/place`, by which the parent or guardian of an athlete aged 13 to 17 sets where the athlete plays (state, level and school). It is refused for an adult athlete. The section now says so.
