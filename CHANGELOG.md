@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-30, Teammate invites to existing accounts
+
+An invite sent to the email of someone who already had a Leave account linked that account as the athlete's Teammate at once: there was no step on the invited person's side and no 18-or-older check, which new Teammate accounts get at sign-up. A count of production records showed the path had never been used, so no account was affected. Since 2026-10-30 an invite no longer links an existing account at once, an athlete under 18 or an account held through a guardian cannot be made a Teammate, an athlete cannot invite their own address, and the guardian's write of where an athlete plays requires the guardian link.
+
 ## 2026-10-30, a phone's confirmation can be used once
 
 Actions that need a confirmation signed by the athlete's phone (deleting the account, exporting data, changing the Teammate, turning on private data for an AI app, and the others the API contract lists) were accepted again within the confirmation's five-minute window if someone had captured one. Since 2026-10-30 Leave's servers accept each confirmation once, across all server instances, keyed on the phone and the exact signed message rather than the signature's encoding; a second use is refused. No app update was needed. Binding the confirmation to the request it confirms is planned and is listed in the app document's open items.
