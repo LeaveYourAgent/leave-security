@@ -12,9 +12,8 @@ handled. 1.4.0 (build 80, code 20) adds Talk's web search on the phone's side, d
 in the Talk row. 1.5.0 (build 81, code 21) adds state rules on a deal, on since 2026-10-30
 and described in their own row. 1.6.0 (build 82, code 22) adds the Rules tab, read-only,
 to a parent or guardian's Teammate view, described in the Teammate row. The crypto files are unchanged across all of these:
-leave-crypto tags `ios-78`, `ios-80`, `ios-81`, `android-19`, `android-20` and
-`android-21` are the same commit, 1.6.0 (build 82, code 22) ships that same commit with no
-crypto file changed, and both pipelines' drift checks matched. The app code
+leave-crypto tags `ios-78`, `ios-80`, `ios-81`, `ios-82`, `android-19`, `android-20`,
+`android-21` and `android-22` are the same commit, and both pipelines' drift checks matched. The app code
 is the same on both platforms, so a build 78 fact holds for every later build unless a
 line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
 (in a TestFlight or Play internal build only), or **Planned** (designed, agreed with

@@ -2,7 +2,7 @@
 
 ## 2026-10-31, 1.6.0 on both stores (iOS build 82, Android code 22) and the guardian's Rules tab
 
-- Status: iOS 1.6.0 (build 82) on the App Store since 2026-10-31, and Android 1.6.0 (version code 22) on Google Play at 100% since 2026-10-30. The crypto files are unchanged: 1.6.0 ships the commit tagged `ios-81` and `android-21` in leave-crypto, and both pipelines' drift checks matched it.
+- Status: iOS 1.6.0 (build 82) on the App Store since 2026-10-31, and Android 1.6.0 (version code 22) on Google Play at 100% since 2026-10-30. The crypto files are unchanged (the `ios-82` and `android-22` tags are the same commit as `ios-81` and `android-21`, and both pipelines' drift checks matched).
 - The parent or guardian of an athlete aged 13 to 17 now sees the Rules tab, read-only, on the contracts the athlete's phone has shared with them. The app document's Teammate row says how: it is worked out on the guardian's phone from the public rules for where the athlete plays, read from the route that takes no sign-in. The guardian gets no signing-date field, no packet and no reported mark. An adult athlete's Teammate is unchanged.
 - Three app lines now say no more than is true. Two private strand labels said "only you" and now say "locked on your phone", because Talk reads strands when it answers. The notifications screen said a notification has no brand, amount or name; a notification about an AI app names the app, so it now says no brand, amount or contract detail.
 
