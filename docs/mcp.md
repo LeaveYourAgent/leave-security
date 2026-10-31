@@ -128,7 +128,7 @@ For an athlete under 18, `get_public_signals` and `get_web_threads` leave out ev
 There are no delete or send tools at launch. Destructive actions stay in the app behind Face ID or the phone's fingerprint or face unlock.
 
 **Prompt-injection hygiene:**
-- Web threads come from public posts, so they are untrusted. Their titles go out with markup and instruction-like text stripped, and a thread's reason with instruction-like text stripped and labelled as written by Leave's AI.
+- Web threads come from public posts, so they are untrusted. Their titles go out with markup, hidden characters and instruction-like text stripped, and since 2026-10-31 a link inside a title or summary is cut to its site's name in brackets (the thread's own source link is a separate field), and a thread's reason with instruction-like text stripped and labelled as written by Leave's AI.
 - Every input is validated on the server.
 - Logs never contain private content.
 

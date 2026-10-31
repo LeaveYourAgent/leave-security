@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-31, Talk no longer saves a strand or record change from pasted material on its own
+
+- Until today, Talk could save a new strand from the athlete's message, edit a saved one or change a detail of the public record before the athlete chose it, and showed the change on the receipt (a strand with Undo). Text pasted into a message, such as an email, a forward or a contract clause, arrives as the athlete's own words, so a line inside it could add or change a strand or a record detail the athlete did not mean to. Found in Leave's own security review.
+- Since 2026-10-31 Leave's servers make none of these changes on their own when the message carries pasted material: characters a person cannot see, an email's or a forward's headers, or a quoted block. They count how often that happens, with no words.
+- App 1.7 makes every strand and record change from Talk a proposal that is saved only when the athlete taps it. The app document marks it Planned until 1.7 is on both stores.
+- Also since 2026-10-31: every character a person cannot see is taken out of what Leave's AI reads (the message, earlier turns, contracts, strands, threads and search answers), as the AI app connection already did; what is stored is unchanged. A link inside a public page's title or summary is cut to its site's name before an AI reads it. The check that keeps a report line from telling the athlete what to do also catches "apply", "claim", "visit" and "call".
+
 ## 2026-10-31, 1.6.0 on both stores (iOS build 82, Android code 22) and the guardian's Rules tab
 
 - Status: iOS 1.6.0 (build 82) on the App Store since 2026-10-31, and Android 1.6.0 (version code 22) on Google Play at 100% since 2026-10-30. The crypto files are unchanged (the `ios-82` and `android-22` tags are the same commit as `ios-81` and `android-21`, and both pipelines' drift checks matched).
