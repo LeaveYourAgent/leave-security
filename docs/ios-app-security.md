@@ -1,18 +1,20 @@
 # Leave iOS app: security design
 
-**Status as of 2026-10-30.** The app has been on the App Store since 2026-10-19
-(build 68, version 1.0); the current store build is 81 (version 1.5.0, on sale
-2026-10-27). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
+**Status as of 2026-10-31.** The app has been on the App Store since 2026-10-19
+(build 68, version 1.0); the current store build is 82 (version 1.6.0, on sale
+2026-10-31). Android has been on Google Play since 2026-10-24 (1.2.0, code 12);
 1.3.0 (version code 18) since 2026-10-25, 1.3.1 (code 19) the same day, 1.4.0 (code 20)
-on 2026-10-26, and the store's current Android version is 1.5.0 (code 21, on the
-listing 2026-10-27). From code 19 the Android release build has code shrinking (R8) on,
+on 2026-10-26, 1.5.0 (code 21) on 2026-10-27, and the store's current Android version is
+1.6.0 (code 22, at 100% of the listing since 2026-10-30). From code 19 the Android release build has code shrinking (R8) on,
 so libraries are shrunk and renamed while Leave's own classes keep their names by design;
 the sign-in code field is reachable by screen readers, with no change to how the code is
 handled. 1.4.0 (build 80, code 20) adds Talk's web search on the phone's side, described
 in the Talk row. 1.5.0 (build 81, code 21) adds state rules on a deal, on since 2026-10-30
-and described in their own row. The crypto files are unchanged across all of these:
+and described in their own row. 1.6.0 (build 82, code 22) adds the Rules tab, read-only,
+to a parent or guardian's Teammate view, described in the Teammate row. The crypto files are unchanged across all of these:
 leave-crypto tags `ios-78`, `ios-80`, `ios-81`, `android-19`, `android-20` and
-`android-21` are the same commit, and both pipelines' drift checks matched. The app code
+`android-21` are the same commit, 1.6.0 (build 82, code 22) ships that same commit with no
+crypto file changed, and both pipelines' drift checks matched. The app code
 is the same on both platforms, so a build 78 fact holds for every later build unless a
 line says otherwise. Each item is marked **Live** (in the App Store build today), **In testing**
 (in a TestFlight or Play internal build only), or **Planned** (designed, agreed with
@@ -65,7 +67,7 @@ our hosting provider, or by a vendor outside a session the athlete started.
 | State rules on a deal, the disclosure window, and a deal's packet | Live (build 81, Android code 21; on since 2026-10-30): the athlete answers where they play (state, level and school) as a question; there is no location permission. For an athlete aged 13 to 17 the parent or guardian sets it, and the server records who set it and when, with no values. The rules are public data: a copy ships in the app and is refreshed from a route that takes no sign-in and carries only the state, level and school. Each deal shows that place's rules and, where a rule's window is counted from the signing, the day it ends ("The disclosure window in {state} ends {date}"). The signing date comes from the contract's reading, or from the athlete if they type it; the signing date, the day a disclosure window ends and the day the athlete marks a deal reported are kept on Leave's servers unencrypted, beside the payment dates, so a reminder can go the day before and the morning of. That notification carries one fixed sentence, with no brand, state or amount. A deal's packet is written on the phone from the contract it has opened and the rules, and the athlete shares it as a PDF or as text through the share sheet; Leave sends it to no one, and the PDF file is removed when the sheet closes |
 | Leave Web live: strands, threads and signals read from the API, thread text opened on the phone, a run of the matcher with a grant that holds only the strand keys. From API contract v1.13.0 a run is accepted at once and done by a queued task: the sealed grant travels in the task, is opened only by the instance doing the work, and expires on Leave's servers 15 minutes after the phone made it, the same as a contract's reading. The app follows the run's state from build 55 | Live (build 72; from build 25; the queued run from build 55) |
 | Export my data: the server packs every private record as the ciphertext it stores, without reading any; the phone downloads the archive, opens each record with the key it holds and offers a plain zip through the share sheet, deleting its own copies afterwards; asking is signed by the phone behind Face ID | Live (build 72; from build 25) |
-| Teammate view: a Teammate or guardian reads, read-only, only what the athlete's phone has wrapped to their account key (contracts, Web threads) plus the public record; strands are never wrapped to anyone | Live (build 72; from build 27) |
+| Teammate view: a Teammate or guardian reads, read-only, only what the athlete's phone has wrapped to their account key (contracts, Web threads) plus the public record; strands are never wrapped to anyone | Live (build 82; from build 27). From build 82 (Android code 22) the parent or guardian of an athlete aged 13 to 17 also sees the Rules tab on the contracts the athlete's phone has shared with them, read-only. The guardian's phone works it out from those contracts' dates and the public rules for the place the athlete plays, read from the same route the athlete's phone uses, which takes no sign-in and carries only the state, level and school. The guardian gets no signing-date field, no packet and no reported mark, so nothing is written from the guardian's side. An adult athlete's Teammate sees no Rules tab |
 | Usage meter, allowance nudges, purchases | Live (build 72; from build 20): plan status, usage against each allowance, credits and auto-refill; the plan and credit packs are bought through Apple in-app purchase (StoreKit 2) and granted by the server from Apple's signed transaction, with the website's Stripe checkout offered beside it on the United States App Store storefront (section 3, item 11; this row said "web only" until 2026-10-25); nudges arrive with push |
 | Crypto module checked against the shared test vectors | Live (the app's XCTest target runs every vector kind and four samples generated by the service; the native files are published, as a copy of the app's source, at github.com/LeaveYourAgent/leave-crypto (Apache-2.0) with the shared test vectors; the repository is tagged per store build (`ios-72`, `ios-77`, `ios-78`, `android-17`, `android-18`) and both release pipelines refuse an archive whose crypto files differ from the tagged copy (build 78)) |
 
