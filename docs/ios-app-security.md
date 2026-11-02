@@ -97,7 +97,7 @@ Email and Code screens and calls two Leave routes instead of a hosted sign-in pa
 | Code screen, "Continue" | `POST /auth/verify { email, code, device }` | returns access and refresh tokens, whether the email is new, and whether this device is approved |
 | Refresh | `POST /auth/refresh` | refresh token kept in the Keychain, this device only, never synced |
 
-Access tokens live 15 minutes; refresh tokens 30 days, rotated on use. Passkeys as a
+Access tokens live 5 minutes. Refresh tokens are rotated on use, and a session ends after 30 days without use and at most 365 days after sign-in (corrected 2026-11-02: this line said 15 minutes and 30 days). Passkeys as a
 second factor are planned.
 
 **New-device rule (Live, build 72).** A device the account has never seen gets no private
@@ -114,7 +114,7 @@ What it stores and where:
 | Athlete share, 32 bytes | Keychain | accessible after first unlock, synchronizable, no biometric access control, so iCloud Keychain carries it and background Web runs can read it |
 | Account key pair, P-256 | derived, never stored | private scalar derived from the share by rejection sampling: `HKDF-SHA256(share, salt "leave:v1:account-key", info accountId ‖ ":" ‖ counter)`, counter from 0 as ASCII, accepted when in `[1, n-1]`, else retry; stable across the account's devices |
 | Recovery blob | server only | the share encrypted under an Argon2id-derived key from the recovery code; the app never stores the code |
-| Refresh token | Keychain | this device only, not synchronizable |
+| Refresh token | Keychain | this device only, not synchronizable (on iPhone, see the note in section 6 on the system's web cache) |
 
 Key roles, so the design is read correctly: the **share** is the syncable wrapping
 secret. The **account key pair** is derived from it and is what other accounts (the
@@ -317,7 +317,15 @@ to the request it confirms (a nonce and a digest of the request), and jailbreak 
 Since 2026-10-30 Leave's servers accept each device-signed confirmation once, on whichever
 server instance receives it, keyed on the phone and the exact signed message (not its
 encoding), so a captured confirmation cannot be used a second time; this needed no app
-update. The review's findings and fixes are logged on the
+update.
+
+On iPhone, the system's web cache has kept copies of some of Leave's server answers, the
+sign-in tokens among them, in the app's cache folder on the phone, outside the Keychain.
+The folder is not in iCloud or computer backups. Since 2026-11-02, Leave's servers tell
+the phone not to keep any answer that carries account data. An app update that deletes
+the copies earlier versions left is planned.
+
+The review's findings and fixes are logged on the
 security page as they land.
 
 ## 7. Build order (remaining)
