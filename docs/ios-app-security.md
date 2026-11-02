@@ -322,8 +322,9 @@ update.
 On iPhone, the system's web cache has kept copies of some of Leave's server answers, the
 sign-in tokens among them, in the app's cache folder on the phone, outside the Keychain.
 The folder is not in iCloud or computer backups. Since 2026-11-02, Leave's servers tell
-the phone not to keep any answer that carries account data. An app update that deletes
-the copies earlier versions left is planned.
+the phone not to keep any answer that carries account data. Since app 1.7.1 (build 84), the
+app keeps no server answer on disk and deletes the copies earlier versions left when it
+first opens.
 
 On Android, the app's network library has kept copies of some of Leave's server answers in
 the app's private cache folder on the phone, outside Leave's encrypted store: account and

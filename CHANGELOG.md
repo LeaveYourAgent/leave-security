@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02, on iPhone, the system's web cache no longer keeps Leave's server answers
+
+- On iPhone, the system's web cache kept copies of some of Leave's server answers in the app's cache folder on the phone, outside the Keychain and Leave's encrypted store. These included the sign-in tokens; the account's email address, name, role and, for an athlete, date of birth; the names of a linked Teammate, guardian or athletes; device names and models; the plan's usage; the names of connected AI apps; for each contract, the brand, the payment due dates and whether each was paid, and the signing and disclosure dates; the public items each Web thread links to; and, on a Teammate's phone, what that Teammate's view of the athlete shows. Found in Leave's own security review.
+- The cache folder is not in iCloud or computer backups. Contract terms, strands and the text of Web threads were in the cache only in encrypted form; they are opened only with keys that stay on the phone. The sign-in tokens and the details above were in readable form, open to anything that could read the app's own files.
+- Since November 2, 2026, Leave's servers tell the phone not to keep any answer that carries account data. Since app 1.7.1 (build 84), released on the App Store on November 2, 2026, the app keeps no server answer on disk and deletes the copies earlier versions left when it first opens.
+
 ## 2026-11-02, on Android, the app no longer keeps Leave's server answers in its cache
 
 - On Android, the app's network library kept copies of some of Leave's server answers in the app's private cache folder on the phone, outside Leave's encrypted store: account and device details, the plan's usage, the names of connected AI apps, the lists of contracts and Web threads, and, on a Teammate's phone, what that Teammate's view of the athlete shows. Found in Leave's own security review.
