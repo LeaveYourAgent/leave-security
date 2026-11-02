@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02, the metadata lists name everything Leave's database and graph database keep in plaintext
+
+- The security page and the architecture document listed the account metadata Leave can see, and the list was incomplete. Leave's database and graph database also keep in plaintext: the account holder's name, email, time zone and an athlete's date of birth; the public record; linked people's names and invite emails; which public item each Web thread links to and which strand it came from; phones' names and models; connected AI apps; usage and billing records; consent records; an account-action log; and technical identifiers for sign-in, notifications and store purchases. The exclusivity end date is now named on its own. Found in Leave's own security review.
+- Both lists now name all of it, grouped. "Never an amount or a clause" now reads "never a contract's amounts or its clauses". The database does hold amounts from Leave's own billing (credits, what each use cost Leave, auto-refill settings). It never holds a contract's amounts, which stay in the encrypted fields.
+- What is kept after a deletion is unchanged and listed in the Privacy Policy.
+
 ## 2026-11-02, what the graph database holds
 
 - The architecture document said Leave's graph database (Neo4j) holds opaque IDs and encrypted properties only, and that the Web screen and the "why it fits" evidence are graph queries. Neither is true. The graph holds the account id and, for each contract, its id, how many clauses Leave flagged, the exclusivity end date and the brand's web domain, all in plaintext, with each brand one node shared by the accounts whose contracts name it. Found in Leave's own security review.
