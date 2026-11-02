@@ -325,6 +325,17 @@ The folder is not in iCloud or computer backups. Since 2026-11-02, Leave's serve
 the phone not to keep any answer that carries account data. An app update that deletes
 the copies earlier versions left is planned.
 
+On Android, the app's network library has kept copies of some of Leave's server answers in
+the app's private cache folder on the phone, outside Leave's encrypted store: account and
+device details, the plan's usage, the names of connected AI apps, the lists of contracts
+and Web threads, and, on a Teammate's phone, what that Teammate's view of the athlete
+shows. The sign-in tokens were not among them, and contract terms, strands and the text of
+Web threads were there only in encrypted form. Android keeps that folder private to the
+app: other apps cannot read it unless the phone has been rooted, and Android never puts it
+in backups or in transfers to a new phone. Since 2026-11-02, Leave's servers tell the phone
+not to keep any answer that carries account data, and an app update that deletes the
+copies already there is planned.
+
 The review's findings and fixes are logged on the
 security page as they land.
 
