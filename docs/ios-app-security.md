@@ -333,8 +333,9 @@ shows. The sign-in tokens were not among them, and contract terms, strands and t
 Web threads were there only in encrypted form. Android keeps that folder private to the
 app: other apps cannot read it unless the phone has been rooted, and Android never puts it
 in backups or in transfers to a new phone. Since 2026-11-02, Leave's servers tell the phone
-not to keep any answer that carries account data, and an app update that deletes the
-copies already there is planned.
+not to keep any answer that carries account data, and since app 1.7.2 (version code 25)
+the app keeps no server answer on disk and deletes the copies earlier versions left when it
+opens.
 
 The review's findings and fixes are logged on the
 security page as they land.
