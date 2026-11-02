@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02, what the graph database holds
+
+- The architecture document said Leave's graph database (Neo4j) holds opaque IDs and encrypted properties only, and that the Web screen and the "why it fits" evidence are graph queries. Neither is true. The graph holds the account id and, for each contract, its id, how many clauses Leave flagged, the exclusivity end date and the brand's web domain, all in plaintext, with each brand one node shared by the accounts whose contracts name it. Found in Leave's own security review.
+- Strands, contract terms and Web threads were never in the graph. The same metadata is in Leave's database, as the metadata list says; the flagged-clause count is now on that list. Nothing in Leave reads the graph today, and the Web is read from the database. The graph stays inside the private network with no public address.
+- The document's graph description, its encryption section, its list of what stays plaintext and the database design note now say so.
+
 ## 2026-11-01, on Android 16, back no longer closes the app lock
 
 - On Android 16, Leave's app lock could be closed with the back button or a back gesture. The lock came straight back, and Leave's main screen stays blank while it is locked. But if Leave had been left on a recovery code screen or a file preview, that screen could show for a moment, including while a back swipe was in progress, before the lock returned. Found in Leave's own security review.
