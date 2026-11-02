@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-01, on Android 16, back no longer closes the app lock
+
+- On Android 16, Leave's app lock could be closed with the back button or a back gesture. The lock came straight back, and Leave's main screen stays blank while it is locked. But if Leave had been left on a recovery code screen or a file preview, that screen could show for a moment, including while a back swipe was in progress, before the lock returned. Found in Leave's own security review.
+- This applied to every version of Leave on Google Play since October 24, 2026, on phones running Android 16. On Android 13 to 15, back on the lock worked as meant.
+- Since app 1.7.1 (version code 24), released on Google Play on November 1, 2026, back on the lock screen sends Leave to the background on every Android version, and every Leave screen stays covered while the lock is up.
+
 ## 2026-10-31, Talk no longer saves a strand or record change from pasted material on its own
 
 - Until today, Talk could save a new strand from the athlete's message, edit a saved one or change a detail of the public record before the athlete chose it, and showed the change on the receipt (a strand with Undo). Text pasted into a message, such as an email, a forward or a contract clause, arrives as the athlete's own words, so a line inside it could add or change a strand or a record detail the athlete did not mean to. Found in Leave's own security review.
