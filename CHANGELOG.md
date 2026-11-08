@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-08, the hardware key also encrypts storage at rest
+
+- leaveyouragent.com/security (section 3, "Lock 1") and `docs/architecture-and-security.md` (KMS IAM) said only Leave's two server programs can use the hardware key in Google Cloud. They can use it to open an item's key, and no person at Leave can. But the same key also encrypts Leave's database and file storage at rest, and Google's storage services use it to read those back for anyone allowed to read them.
+- What those stores hold for private items (contract files, contract terms, strands) is still the app's ciphertext, locked by the athlete's key share, so this changes no promise about private data. No access changed.
+
 ## 2026-11-08, the documents show the $19.99 plan
 
 - `docs/architecture-and-security.md` (section 2b) and `docs/api-contract.md` (section 9) still gave the $49 Base plan and its allowances. They now give the one plan sold since November 6, 2026: $19.99 a month or $189.99 a year, with a 14-day free trial, the same on the web, in the App Store and on Google Play. It includes 250 talks, 3 contracts up to 60 pages, Web runs up to 2 a day and 1 GB of files each month; the trial includes 125 talks and 1 contract up to 30 pages. Lite is no longer sold.
