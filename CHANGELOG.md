@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-08, the documents show the $19.99 plan
+
+- `docs/architecture-and-security.md` (section 2b) and `docs/api-contract.md` (section 9) still gave the $49 Base plan and its allowances. They now give the one plan sold since November 6, 2026: $19.99 a month or $189.99 a year, with a 14-day free trial, the same on the web, in the App Store and on Google Play. It includes 250 talks, 3 contracts up to 60 pages, Web runs up to 2 a day and 1 GB of files each month; the trial includes 125 talks and 1 contract up to 30 pages. Lite is no longer sold.
+- Extra usage is Leave credits at 1 cent each, in packs of $5, $10, $20 or $50, bought on the web or through Apple or Google Play, up to $100 a calendar month. Credits don't expire.
+- The API contract's last paragraph on billing still said credits were forfeited 30 days after a subscription ended. That rule ended on October 3, 2026, as the architecture document already said; the contract now says so too.
+- No security design changed. Dated entries keep the prices of their dates.
+
 ## 2026-11-02, on iPhone, the system's web cache no longer keeps Leave's server answers
 
 - On iPhone, the system's web cache kept copies of some of Leave's server answers in the app's cache folder on the phone, outside the Keychain and Leave's encrypted store. These included the sign-in tokens; the account's email address, name, role and, for an athlete, date of birth; the names of a linked Teammate, guardian or athletes; device names and models; the plan's usage; the names of connected AI apps; for each contract, the brand, the payment due dates and whether each was paid, and the signing and disclosure dates; the public items each Web thread links to; and, on a Teammate's phone, what that Teammate's view of the athlete shows. Found in Leave's own security review.

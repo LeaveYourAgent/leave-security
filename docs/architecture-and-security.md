@@ -1,6 +1,6 @@
 # Leave on Google Cloud: architecture and security
 
-Live on the App Store for iPhone since 2026-10-19 and on Google Play for Android since 2026-10-24. Status as of 2026-10-25.
+Live on the App Store for iPhone since 2026-10-19 and on Google Play for Android since 2026-10-24. Status as of 2026-11-08.
 
 **Note, 2026-10-24:** this document was corrected against what is live on 2026-10-24; the changelog lists each change.
 
@@ -137,21 +137,21 @@ On the routes that carry a person's own words, individual signatures that misfir
 
 ### Plan allowances and hard caps
 
-The Base plan is $49 a month on the web, with a 14-day free trial. It includes a monthly allowance, and the gateway enforces hard caps regardless of anything the athlete has bought.
+Leave has one plan: $19.99 a month or $189.99 a year, with a 14-day free trial, the same price on the web, in the App Store and on Google Play (on the web and Google Play since 2026-11-06, in the App Store since 2026-11-08; it was $39 a month from 2026-10-20 and $49 before). Lite is no longer sold. The plan includes a monthly allowance, and the gateway enforces hard caps regardless of anything the athlete has bought.
 
 | Allowance per month | Included |
 |---|---|
-| Talk to Leave | 300 talks |
-| Contracts | 5 uploads, 100 pages |
-| The Web | unlimited threads; matching runs up to 4 a day |
+| Talk to Leave | 250 talks |
+| Contracts | 3 uploads, 60 pages |
+| The Web | unlimited threads; matching runs up to 2 a day |
 | Pitch drafts | 30 |
 | Leave speaking | 120 minutes |
 | Files | 1 GB |
 
-- **Trial:** half allowances (150 talks, 2 contracts, 60 speaking minutes).
-- **More usage: Leave credits**, 1,000 credits for $10, bought on leaveyouragent.com through Stripe; the app links out to the web. Auto-refill is off by default and, when turned on, has a monthly cap the athlete sets. Credits do not expire; a balance stays on the account after the subscription ends and is used again when the account has one. Until 2026-10-03 the Terms forfeited unused credits 30 days after the subscription ended; that rule is gone.
+- **Trial:** 125 talks, 1 contract (up to 30 pages), 15 pitch drafts and 60 speaking minutes, with the same files and Web runs.
+- **More usage: Leave credits**, one credit for 1 cent (1,000 credits for $10), in packs of $5, $10, $20 or $50, bought in the app through Apple or Google Play or on leaveyouragent.com through Stripe. An account can buy up to $100 of credits a calendar month. Auto-refill is off by default and, when turned on, has a monthly cap the athlete sets. Credits do not expire; a balance stays on the account after the subscription ends and is used again when the account has one. Until 2026-10-03 the Terms forfeited unused credits 30 days after the subscription ended; that rule is gone.
 - **Athletes aged 13 to 17:** only the parent or legal guardian can buy.
-- **What the athlete sees:** usage in Profile → Plan ("This month: 142 of 300 talks · 2 of 5 contracts · 34 of 120 speaking minutes · 250 credits"), reset on the billing day. At 80%, a push and an in-app line. At 100%, a soft stop: a Talk conversation always finishes its current reply, then offers "Add credits" or "Wait for the plan to renew"; contract upload shows the same choice before processing starts, never after.
+- **What the athlete sees:** usage in Profile → Plan ("This month: 142 of 250 talks · 2 of 3 contracts · 34 of 120 speaking minutes · 250 credits"), reset on the billing day. At 80%, a push and an in-app line. At 100%, a soft stop: a Talk conversation always finishes its current reply, then offers "Add credits" or "Wait for the plan to renew"; contract upload shows the same choice before processing starts, never after.
 - The Teammate seat draws from the athlete's allowance (their only AI action is "Ask about this contract").
 
 Hard caps the gateway enforces regardless of credits:
@@ -462,6 +462,9 @@ Status markers: **done** means configured or live today; everything else is desi
 The independent penetration test is not on this checklist: it happens once Leave is funded, then annually (section 2d).
 
 ## Changelog
+
+**2026-11-08**
+- Plan and prices brought up to date (section 2b): one plan at $19.99 a month or $189.99 a year (web and Google Play since 2026-11-06, App Store since 2026-11-08), with its allowances (250 talks, 3 contracts up to 60 pages, Web runs up to 2 a day) and the trial's; credits in packs of $5, $10, $20 or $50, also sold through Apple and Google Play, up to $100 a month; Lite no longer sold. The entries below keep the prices of their dates.
 
 **2026-10-02**
 - Crash reports go to Leave's own API, not to Firebase Crashlytics, which this document had planned and which was never added. A report is numbers and values from fixed lists (where in the code an error happened, the app build, the OS version, the device model) with no field that can hold text, no account or device identifier, and no sender address stored; it is kept 30 days as a log line, with an email alert. In the app from build 40, with a switch in Profile. The design is in the app repo's `docs/CRASH-REPORTING-PLAN.md`.
