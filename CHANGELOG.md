@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-09, AI apps read strands when the person shares them
+
+- With Share private data turned on for an AI app under the sheet that names strands, the private reason behind each thread and contract terms, and while unlocked on the phone, the AI app can read the person's strands as well as contract terms. On November 9, 2026 this was shown end to end: Claude read a contract's terms and the account's strands on a new account with the iPhone app 1.9.1.
+- `docs/mcp.md` now says so, and adds one limit of AI apps: one that connected before the switch went on keeps its older list of Leave's tools, which has no strand tool and says an unlock opens contract terms only, until Leave is reconnected or refreshed in it. Turning the switch off or "Lock now" still takes effect on the next request, whatever list the AI app shows.
+- No security design changed: one switch per AI app, off by default, Face ID, the phone's fingerprint or face unlock, or the passcode for each unlock of 15 minutes or 1 hour, never for an account under 18.
+
 ## 2026-11-08, the hardware key also encrypts storage at rest
 
 - leaveyouragent.com/security (section 3, "Lock 1") and `docs/architecture-and-security.md` (KMS IAM) said only Leave's two server programs can use the hardware key in Google Cloud. They can use it to open an item's key, and no person at Leave can. But the same key also encrypts Leave's database and file storage at rest, and Google's storage services use it to read those back for anyone allowed to read them.
