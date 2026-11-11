@@ -294,6 +294,7 @@ Standard for this review: Leave is a security-first consumer company asking athl
 ### Explicitly accepted, and disclosed
 
 - While an athlete uses Leave, the records in use are plaintext in the API's memory and in the model's context at Google (Gemini on Vertex AI). Google may keep those prompts and responses for up to 90 days, and only prompts its automated checks flag, solely for abuse monitoring, never for training; Leave asked for that retention to be waived and Google declined. There is no way to explain a contract without reading it. The security page and the Privacy Policy say so.
+- Since [date], Talk's model calls go out with Google's Priority PayGo request header (`X-Vertex-AI-LLM-Shared-Request-Type: priority`; on the routes in `MODEL_PRIORITY_ROUTES`, today `talk`), so Vertex serves them ahead of Standard PayGo traffic and falls back to Standard when it has no room. It's the same Vertex AI service, global endpoint, project and models. Google's terms attach to the service, not to a consumption tier: the data-governance page states its commitments (no training without permission, caching off per project, abuse monitoring under the Google Cloud terms) for "all managed models", and names no tier; the Service Specific Terms' training restriction (section 18) and prompt and output storage (20(h)) apply to all AI/ML and Generative AI Services, and the only tier they name is Provisioned Throughput (20(o)), on capacity only; the Priority PayGo page covers price, routing and downgrade, and says nothing about data (read 2026-11-11). Leave asked Google on 2026-11-11 to confirm in writing that Priority requests are under the same terms. Until then, that unconfirmed point is an accepted risk (Leave's founder, 2026-11-11; review by 2026-12-11, or on Google's answer). Each `model_call` log line records how Vertex served the call (`trafficType`, an enum), never its content. Athletes are charged the Standard price; Leave pays the difference.
 - Graph shape (counts, timestamps) and account metadata are visible to Leave. Support works from this only.
 - Cloud Run is not confidential hardware. If Google ships it, the sealed services move first.
 
@@ -462,6 +463,9 @@ Status markers: **done** means configured or live today; everything else is desi
 The independent penetration test is not on this checklist: it happens once Leave is funded, then annually (section 2d).
 
 ## Changelog
+
+**[DATE-ISO]**
+- Talk uses Priority PayGo; the unconfirmed data-terms point is listed under Explicitly accepted, and disclosed.
 
 **2026-11-08**
 - KMS IAM (section 2c, "Google-side controls") corrected: the HSM key that wraps item keys is also the CMEK key for the database and file storage at rest, so Google's storage service agents use it for anyone the store allows to read. Private items in those stores are still the app's ciphertext, locked by the athlete's key share. The same correction is on leaveyouragent.com/security, section 3.
